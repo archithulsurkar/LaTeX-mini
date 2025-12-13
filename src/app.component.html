@@ -1,0 +1,120 @@
+
+<main class="min-h-screen font-sans text-slate-800 dark:text-slate-200 p-4 sm:p-6 lg:p-8">
+  <div class="max-w-5xl mx-auto">
+    <header class="text-center mb-10">
+      <h1 class="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400 mb-2">
+        Formula Accessibility Remediator
+      </h1>
+      <p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+        Instantly convert complex math and chemical formulas from images into accessible formats using Google Gemini.
+      </p>
+    </header>
+
+    @switch (status()) {
+      @case ('idle') {
+        <div class="w-full max-w-xl mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 text-center">
+          <svg class="mx-auto h-16 w-16 text-slate-400 dark:text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+          </svg>
+          <h3 class="mt-4 text-2xl font-semibold text-slate-800 dark:text-white">Upload a File</h3>
+          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Select a PDF, screenshot, or image of a document page (PDF, PNG, JPG, WEBP).
+          </p>
+          <label for="file-upload" class="mt-6 inline-block cursor-pointer rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
+            Select File
+          </label>
+          <input id="file-upload" name="file-upload" type="file" class="sr-only" (change)="handleFileChange($event)" accept="image/png, image/jpeg, image/webp, application/pdf">
+        </div>
+      }
+      @case ('loading') {
+        <div class="flex flex-col items-center justify-center text-center p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+          <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <p class="mt-6 text-xl font-medium text-slate-700 dark:text-slate-300">Gemini is analyzing your file...</p>
+          <p class="text-slate-500 dark:text-slate-400">This may take a moment for complex formulas or PDFs.</p>
+        </div>
+      }
+      @case ('error') {
+        <div class="w-full max-w-xl mx-auto bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-2xl shadow-lg p-8 text-center">
+          <svg class="mx-auto h-12 w-12 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <h3 class="mt-4 text-2xl font-semibold text-red-800 dark:text-red-200">An Error Occurred</h3>
+          <p class="mt-2 text-red-600 dark:text-red-300">{{ errorMessage() }}</p>
+          <button (click)="reset()" class="mt-6 inline-block rounded-lg bg-red-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 transition-colors">
+            Try Again
+          </button>
+        </div>
+      }
+      @case ('success') {
+        <div class="space-y-8">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="space-y-4">
+              <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Uploaded Content</h2>
+              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-4">
+                <img [src]="uploadedImage()" alt="Uploaded content with formulas" class="rounded-lg w-full object-contain max-h-96">
+              </div>
+            </div>
+            <div class="space-y-4">
+              <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Remediated Formulas</h2>
+              <p class="text-slate-600 dark:text-slate-400">
+                Found {{ remediationResult().formulas.length }} formula(s).
+              </p>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            @for (formula of remediationResult().formulas; track formula; let i = $index) {
+              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="p-6">
+                  <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4">Formula {{ i + 1 }}</h3>
+                  <div class="space-y-4">
+                    <div>
+                      <h4 class="font-medium text-slate-700 dark:text-slate-300">Text Description</h4>
+                      <div class="mt-2 p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-slate-600 dark:text-slate-300 relative group">
+                        <p>{{ formula.description }}</p>
+                        <button (click)="copyToClipboard(formula.description)" class="absolute top-2 right-2 p-1.5 bg-slate-200 dark:bg-slate-600 rounded-md text-slate-500 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           <span class="sr-only">Copy description</span>
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 class="font-medium text-slate-700 dark:text-slate-300">LaTeX</h4>
+                      <div class="mt-2 p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg relative group">
+                        <pre class="text-sm text-pink-600 dark:text-pink-400 whitespace-pre-wrap"><code>{{ formula.latex }}</code></pre>
+                        <button (click)="copyToClipboard(formula.latex)" class="absolute top-2 right-2 p-1.5 bg-slate-200 dark:bg-slate-600 rounded-md text-slate-500 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           <span class="sr-only">Copy LaTeX</span>
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 class="font-medium text-slate-700 dark:text-slate-300">MathML (Rendered)</h4>
+                      <div class="mt-2 p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg overflow-x-auto text-lg" [innerHTML]="sanitizer.bypassSecurityTrustHtml(formula.mathml)"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+          
+          <div class="mt-8 p-4 bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-lg text-sm text-blue-800 dark:text-slate-300">
+            <p class="font-semibold">Exporting to LaTeX</p>
+            <p class="mt-1">
+              The generated <code>.tex</code> file includes all extracted text and formulas. To include the original page's visual layout (with diagrams and images), right-click the "Uploaded Content" image, save it as <code>original_page_image.png</code>, and place it in the same folder as your <code>.tex</code> file before compiling.
+            </p>
+          </div>
+
+          <div class="text-center mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button (click)="exportToLatex()" class="w-full sm:w-auto rounded-lg bg-teal-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 transition-colors">
+              Export to LaTeX
+            </button>
+            <button (click)="reset()" class="w-full sm:w-auto rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
+              Process Another File
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</main>
