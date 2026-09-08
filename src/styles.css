@@ -1,0 +1,16 @@
+@import 'tailwindcss';
+
+/* Sources Tailwind scans for class names. */
+@source '../index.html';
+@source './**/*.{html,ts}';
+
+/* Matches the previous CDN setup, which followed the OS setting. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
+body {
+  @apply bg-slate-50 dark:bg-slate-900;
+}
