@@ -31,3 +31,6 @@ dist-ssr
 
 # e2e fixtures and artifacts
 e2e/.tmp
+
+.agents/*
+
