@@ -10,7 +10,8 @@
     "build": "ng build",
     "start": "tsx --env-file-if-exists=.env server/index.ts",
     "preview": "npm run build && npm run start",
-    "test": "tsx --test \"src/**/*.test.ts\" \"server/**/*.test.ts\"",
+    "test": "tsx --test \"src/**/*.test.ts\" \"server/**/*.test.ts\" \"eval/**/*.test.ts\"",
+    "eval": "tsx eval/run.ts",
     "typecheck": "tsc -p tsconfig.server.json && ng build --configuration development",
     "test:e2e": "node e2e/ui.mjs",
     "test:compile": "tsx e2e/compile.ts"

@@ -71,20 +71,22 @@ Close the gap between "the model answered" and "the answer is right and usable".
 - **Content-addressed result cache.** Keyed on the SHA-256 of the image payload
   and checked before `provider.remediateImage`; re-uploading the same PDF
   currently re-spends the entire free-tier quota.
-- **Derive MathML from the LaTeX** (temml or MathJax) instead of asking the model
-  for both representations independently, which lets them disagree with nothing
-  to catch it.
 
 ## 0.4.0 — Measurement
 
-The repository cannot currently produce a single number about its own quality.
+The harness has landed (`eval/`, `npm run eval`) with the canonical-form metric
+and per-category reporting. What remains is the part that cannot be automated.
 
 - Labelled benchmark set of 100–150 formulas spanning clean typeset, dense
-  multi-column, handwritten and chemical notation.
-- Math-aware accuracy metric: normalize both sides to MathML and compare trees,
-  rather than diffing LaTeX strings.
+  multi-column, handwritten and chemical notation. Hand-labelling this is a full
+  day of work and it is the real cost of this milestone — see `eval/README.md`
+  for the protocol.
+- Screen-reader validation of the `speech` field: the part no other maths-OCR
+  benchmark has, and the reason this set is worth publishing.
 - CI matrix running the benchmark across every backend behind
-  `RemediationProvider`, with results published in the README.
+  `RemediationProvider`, with results published in the README. Hosted providers
+  need live keys and cost money per run, so gate them behind a nightly or manual
+  workflow and keep Ollama in the per-push job.
 - Load test demonstrating the pacer and retry classifier under burst traffic,
   quantifying the 429s avoided.
 

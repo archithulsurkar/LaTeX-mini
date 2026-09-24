@@ -10,7 +10,26 @@ only what has shipped.
 
 ## [Unreleased]
 
-Nothing released since 0.2.0.
+### Added
+
+- ClearSpeak and MathSpeak speech and Nemeth braille, generated from MathML by
+  the Speech Rule Engine. Braille is new output; the description is no longer
+  written by the model. See
+  [ADR 0001](docs/adr/0001-deterministic-speech.md).
+- A formula whose LaTeX will not convert is flagged `needsReview` and shown as
+  such, instead of having a conversion error narrated to the reader.
+- Benchmark harness under `eval/`: dataset schema and loader, a canonical-form
+  comparison that treats `\frac`/`\dfrac`, `x^2`/`x^{2}` and `(`/`\left(` as
+  equal, per-category reporting, and `npm run eval`. The labelled dataset itself
+  is still to be built.
+- `docs/institutional-workflow.md`, recording the constraints a campus
+  disability resources office imposes and the questions still open.
+
+### Changed
+
+- The model returns a transcription and LaTeX only. MathML is derived from the
+  LaTeX with temml rather than requested separately, so the two can no longer
+  disagree, and the prompt and response schema shrink accordingly.
 
 ## [0.2.0] - 2026-09-07
 
