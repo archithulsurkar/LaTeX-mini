@@ -21,13 +21,6 @@ test('ClearSpeak and MathSpeak differ in how they mark structure', async () => {
   assert.match(clearspeak, /square root/i);
 });
 
-test('emits Nemeth braille as braille patterns', async () => {
-  const { braille } = await renderAccessible(latexToMathml('x^{2}'));
-  assert.ok(braille.length > 0, 'expected braille output');
-  // Unicode braille patterns live in U+2800–U+28FF.
-  assert.match(braille, /[⠀-⣿]/);
-});
-
 test('is deterministic across runs', async () => {
   const mathml = latexToMathml('a^{2} + b^{2} = c^{2}');
   const first = await renderAccessible(mathml);
@@ -37,14 +30,15 @@ test('is deterministic across runs', async () => {
 
 test('concurrent callers do not read each other’s engine configuration', async () => {
   // SRE's engine is a process-wide singleton reconfigured per call, so an
-  // unserialized implementation returns braille where speech was asked for.
-  const inputs = ['x + 1', '\\frac{a}{b}', '\\sqrt{2}', 'y^{3}'];
+  // unserialized implementation returns one rule set's output where the other
+  // was asked for.
+  const inputs = ['\\frac{a}{b}', '\\frac{x}{y}', '\\frac{1}{n}', '\\frac{p}{q}'];
   const results = await Promise.all(
     inputs.map(async (latex) => renderAccessible(latexToMathml(latex))),
   );
 
   for (const result of results) {
-    assert.doesNotMatch(result.clearspeak, /[⠀-⣿]/, 'speech contains braille');
-    assert.match(result.braille, /[⠀-⣿]/);
+    assert.match(result.mathspeak, /StartFraction/, 'mathspeak lost its rule set');
+    assert.doesNotMatch(result.clearspeak, /StartFraction/, 'clearspeak got mathspeak output');
   }
 });

@@ -91,9 +91,9 @@ Implications:
 LaTeX is not an accessible format and is not what an office delivers. Confirm
 what they actually hand to students.
 
-Likely set: HTML with MathML, EPUB3, Word with OMML, and Nemeth braille (BRF)
-for braille readers. See `docs/adr/0001-deterministic-speech.md` for why speech
-and braille are generated deterministically rather than by the model.
+Likely set: HTML with MathML, EPUB3, and Word with OMML. See
+`docs/adr/0001-deterministic-speech.md` for why speech is generated
+deterministically rather than by the model.
 
 ## Open questions for the interview
 
@@ -115,8 +115,8 @@ Ask these in order; each one changes the build.
    must be visual.)
 7. What happens today when the source is a bad scan or handwritten? (Decides
    whether handwriting support is a requirement or a nice-to-have.)
-8. Do any of your students read braille, and in which code — Nemeth or UEB?
-   (Decides braille output priority and which SRE locale to target.)
+8. Which screen readers do your students actually use, and on which browsers?
+   (Decides how far MathML can be relied on versus the spoken-text fallback.)
 9. What tools have you tried and abandoned, and why? (The most valuable question
    in the list.)
 
