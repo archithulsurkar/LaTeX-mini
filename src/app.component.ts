@@ -5,6 +5,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Formula, RemediationService, RemediationResult } from './services/remediation.service';
 import { escapeLatex, pageImageFilename, toDisplayMath } from './latex';
 import { buildStandaloneHtml } from './html-export';
+import { EXAMPLE_LATEX, remediateLatex } from './local-remediation';
 import { sanitizeMathml } from './mathml';
 import { MAX_PDF_PAGES } from './shared/remediation.types';
 
@@ -157,7 +158,77 @@ export class AppComponent {
     }
   }
 
+  /** Text in the paste-LaTeX box. */
+  latexInput: WritableSignal<string> = signal('');
+
+  /**
+   * Runs the deterministic pipeline in the browser over pasted LaTeX.
+   *
+   * No provider, no key, no network — transcription is the only step that ever
+   * needed a model, and this path skips it.
+   */
+  async remediatePastedLatex(): Promise<void> {
+    const input = this.latexInput().trim();
+    if (!input) return;
+
+    this.notice.set('');
+    this.progress.set(null);
+    this.uploadedImages.set([]);
+    this.status.set('loading');
+
+    try {
+      const result = await remediateLatex(input);
+      if (!result.formulas.length) {
+        this.errorMessage.set('No formulas found in that input.');
+        this.status.set('error');
+        return;
+      }
+
+      this.remediationResult.set(result);
+      this.status.set('success');
+
+      const flagged = result.formulas.filter((formula) => formula.needsReview).length;
+      if (flagged) {
+        this.appendNotice(`${flagged} formula(s) could not be converted and are flagged for review.`);
+      }
+    } catch (error) {
+      console.error(error);
+      this.errorMessage.set(error instanceof Error ? error.message : 'Could not process that LaTeX.');
+      this.status.set('error');
+    }
+  }
+
+  /** Fills the box with a sample, so a first run needs no input of any kind. */
+  loadExample(): void {
+    this.latexInput.set(EXAMPLE_LATEX);
+    void this.remediatePastedLatex();
+  }
+
+  /**
+   * Speaks a description aloud with the browser's own voice.
+   *
+   * The point of ClearSpeak is how it sounds, which is not conveyed by reading
+   * it off a screen. Uses the Web Speech API, so it costs nothing and works
+   * offline.
+   */
+  speak(text: string): void {
+    const speech = window.speechSynthesis;
+    if (!speech) {
+      this.showCopyFeedback('This browser cannot speak text aloud.');
+      return;
+    }
+
+    speech.cancel();
+    speech.speak(new SpeechSynthesisUtterance(text));
+  }
+
+  stopSpeaking(): void {
+    window.speechSynthesis?.cancel();
+  }
+
   reset(): void {
+    this.stopSpeaking();
+    this.latexInput.set('');
     this.status.set('idle');
     this.remediationResult.set({ formulas: [], originalText: '' });
     this.errorMessage.set('');

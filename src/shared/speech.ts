@@ -11,7 +11,21 @@
  * So the model transcribes and nothing else; everything a reader consumes is
  * generated here, from the MathML, by rules that can be unit tested.
  */
-import sre from 'speech-rule-engine';
+import * as sreModule from 'speech-rule-engine';
+
+/**
+ * CommonJS interop. Node hands the module back as `default`; the browser
+ * bundler exposes the named exports directly and leaves `default` undefined.
+ * Reading one or the other is the difference between this running in both
+ * places and running in neither.
+ */
+const sre = ((sreModule as unknown as { default?: SreApi }).default ?? sreModule) as SreApi;
+
+type SreApi = {
+  setupEngine: (config: sreModule.SreConfig) => Promise<void>;
+  engineReady: () => Promise<void>;
+  toSpeech: (mathml: string) => string;
+};
 
 export interface AccessibleRenderings {
   /** ClearSpeak: reads the way a person would say it aloud. The default. */

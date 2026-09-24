@@ -1,7 +1,5 @@
-import { normalizeLatex } from '../src/shared/latex-normalize.js';
-import { latexToMathml } from '../src/shared/latex-to-mathml.js';
-import { renderAccessible } from '../src/shared/speech.js';
-import type { Formula, ModelResult, RemediationResult } from '../src/shared/remediation.types.js';
+import { enrichFormulas } from '../src/shared/enrich.js';
+import type { ModelResult, RemediationResult } from '../src/shared/remediation.types.js';
 
 export interface CheckResult {
   ok: boolean;
@@ -129,20 +127,10 @@ export const RESPONSE_JSON_SCHEMA = {
  * reviewer that one formula needs a human.
  */
 async function enrich(result: ModelResult): Promise<RemediationResult> {
-  const formulas = await Promise.all(
-    result.formulas.map(async (formula): Promise<Formula> => {
-      const latex = normalizeLatex(formula.latex);
+  const formulas = await enrichFormulas(result.formulas.map((formula) => formula.latex));
 
-      try {
-        const mathml = latexToMathml(latex);
-        const { clearspeak, mathspeak } = await renderAccessible(mathml);
-        return { latex, mathml, description: clearspeak, mathspeak, needsReview: false };
-      } catch (error) {
-        console.warn(`Formula flagged for review: ${(error as Error).message}`);
-        return { latex, mathml: '', description: '', mathspeak: '', needsReview: true };
-      }
-    }),
-  );
+  const flagged = formulas.filter((formula) => formula.needsReview).length;
+  if (flagged) console.warn(`${flagged} formula(s) flagged for review: LaTeX would not convert.`);
 
   return { originalText: result.originalText, formulas };
 }
