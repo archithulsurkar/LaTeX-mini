@@ -4,6 +4,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import * as pdfjsLib from 'pdfjs-dist';
 import { Formula, RemediationService, RemediationResult } from './services/remediation.service';
 import { escapeLatex, pageImageFilename, toDisplayMath } from './latex';
+import { buildStandaloneHtml } from './html-export';
 import { sanitizeMathml } from './mathml';
 import { MAX_PDF_PAGES } from './shared/remediation.types';
 
@@ -34,6 +35,9 @@ interface PageImage {
 
 /** Rendering scale for PDF pages. Higher reads small subscripts more reliably. */
 const PDF_RENDER_SCALE = 2.0;
+
+/** Longest edge of the page images embedded in the HTML export. */
+const EMBEDDED_IMAGE_MAX_WIDTH = 1200;
 
 const ACCEPTED_UPLOAD_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'] as const;
 type UploadType = (typeof ACCEPTED_UPLOAD_TYPES)[number];
@@ -182,6 +186,69 @@ export class AppComponent {
 
   private appendNotice(message: string): void {
     this.notice.update((current) => (current ? `${current} ${message}` : message));
+  }
+
+  /**
+   * Saves the whole remediation as one self-contained HTML file.
+   *
+   * This is the export that reaches a reader. A `.tex` has to be compiled
+   * first, and the PDF that comes out is not accessible unless it is also
+   * tagged — two toolchain steps, both needing software the reader does not
+   * have. HTML with inline MathML opens in any browser, offline, and screen
+   * readers read the mathematics directly.
+   */
+  async exportToHtml(): Promise<void> {
+    const result = this.remediationResult();
+    if (!result.formulas.length && !result.originalText) {
+      return;
+    }
+
+    const pageImages = await Promise.all(
+      this.uploadedImages().map((dataUrl) => AppComponent.shrinkForEmbedding(dataUrl)),
+    );
+
+    const html = buildStandaloneHtml({
+      originalText: result.originalText,
+      formulas: result.formulas,
+      pageImages,
+    });
+
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    AppComponent.triggerDownload(url, 'remediated-document.html');
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Re-encodes a page image smaller for embedding.
+   *
+   * Pages are rendered at 2x because small subscripts need the resolution; a
+   * reader looking at the figure does not, and base64 inflates by a third, so
+   * embedding the originals would produce multi-megabyte files. Returns the
+   * original if re-encoding is not possible — a large file beats a broken one.
+   */
+  private static async shrinkForEmbedding(dataUrl: string): Promise<string> {
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const element = new Image();
+        element.onload = () => resolve(element);
+        element.onerror = () => reject(new Error('Could not read the page image.'));
+        element.src = dataUrl;
+      });
+
+      if (image.width <= EMBEDDED_IMAGE_MAX_WIDTH) return dataUrl;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = EMBEDDED_IMAGE_MAX_WIDTH;
+      canvas.height = Math.round(image.height * (EMBEDDED_IMAGE_MAX_WIDTH / image.width));
+
+      const context = canvas.getContext('2d');
+      if (!context) return dataUrl;
+
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.85);
+    } catch {
+      return dataUrl;
+    }
   }
 
   exportToLatex(): void {

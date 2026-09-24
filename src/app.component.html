@@ -155,6 +155,9 @@
           </div>
 
           <div class="text-center mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button (click)="exportToHtml()" class="w-full sm:w-auto rounded-lg bg-emerald-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 transition-colors">
+              Download accessible HTML
+            </button>
             <button (click)="exportToLatex()" class="w-full sm:w-auto rounded-lg bg-teal-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 transition-colors">
               Export to LaTeX
             </button>
