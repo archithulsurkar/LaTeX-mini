@@ -25,6 +25,8 @@
     "express": "^5.2.1",
     "pdfjs-dist": "^6.3.289",
     "rxjs": "^7.8.2",
+    "speech-rule-engine": "^5.0.0-rc.4",
+    "temml": "^0.13.5",
     "tsx": "^4.23.13"
   },
   "devDependencies": {

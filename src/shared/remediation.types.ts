@@ -1,7 +1,33 @@
-export interface Formula {
-  description: string;
+/**
+ * What the model is asked for, and all it is asked for: a transcription, and
+ * the LaTeX of each formula. Everything a reader consumes is derived from this
+ * by rule, not written by the model — see `src/shared/speech.ts`.
+ */
+export interface ModelFormula {
   latex: string;
+}
+
+export interface ModelResult {
+  originalText: string;
+  formulas: ModelFormula[];
+}
+
+/** A formula after the deterministic pipeline has enriched it. */
+export interface Formula {
+  latex: string;
+  /** Derived from `latex` by temml. Empty when the LaTeX would not parse. */
   mathml: string;
+  /** ClearSpeak rendering: the screen-reader description. */
+  description: string;
+  /** MathSpeak rendering, for readers who prefer explicit structure markers. */
+  mathspeak: string;
+  /** Nemeth braille, as Unicode braille patterns. */
+  braille: string;
+  /**
+   * Set when the LaTeX could not be converted, so no MathML, speech or braille
+   * could be produced. A human has to look at these before the document ships.
+   */
+  needsReview: boolean;
 }
 
 export interface RemediationResult {
