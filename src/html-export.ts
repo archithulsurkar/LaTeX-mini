@@ -65,7 +65,6 @@ const STYLES = `
   .label { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 1rem 0 .25rem; }
   .label:first-child { margin-top: 0; }
   .rendered { font-size: 1.3rem; overflow-x: auto; }
-  .braille { font-size: 1.4rem; line-height: 1.4; word-break: break-all; }
   code, pre { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .9rem; }
   pre { white-space: pre-wrap; word-break: break-word; margin: 0; }
   .flag { color: var(--flag); font-weight: 600; }
@@ -83,7 +82,7 @@ function renderFormula(formula: Formula, index: number): string {
 
   if (formula.needsReview) {
     parts.push(
-      `<p class="flag">This formula could not be converted, so no spoken or braille form was produced. ` +
+      `<p class="flag">This formula could not be converted, so no spoken form was produced. ` +
         `The transcription below is unverified.</p>`,
     );
   }
@@ -104,10 +103,6 @@ function renderFormula(formula: Formula, index: number): string {
 
   if (formula.mathspeak && formula.mathspeak !== formula.description) {
     parts.push('<p class="label">Spoken description (MathSpeak)</p>', `<p>${escapeHtml(formula.mathspeak)}</p>`);
-  }
-
-  if (formula.braille) {
-    parts.push('<p class="label">Braille (Nemeth)</p>', `<p class="braille">${escapeHtml(formula.braille)}</p>`);
   }
 
   parts.push('<p class="label">LaTeX</p>', `<pre><code>${escapeHtml(formula.latex)}</code></pre>`);
@@ -163,7 +158,7 @@ export function buildStandaloneHtml(input: HtmlExportInput): string {
 <body>
 <h1>${escapeHtml(title)}</h1>
 <p class="meta">${escapeHtml(summary)} · generated ${escapeHtml(generatedAt.toISOString().slice(0, 10))} ·
-speech and braille generated from MathML by rule, not written by a language model</p>
+speech generated from MathML by rule, not written by a language model</p>
 ${sections.join('\n\n')}
 </body>
 </html>

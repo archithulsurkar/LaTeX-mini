@@ -1,12 +1,12 @@
 /**
- * Deterministic accessible renderings of a formula.
+ * Deterministic spoken renderings of a formula.
  *
  * The screen-reader description is the thing a blind reader actually receives,
  * so it is the last part of this pipeline that should be left to a language
  * model: prose invented per request is unverifiable, inconsistent between runs,
  * and conforms to no standard. Turning MathML into spoken maths is instead a
  * solved, rule-based problem with published rule sets — ClearSpeak and
- * MathSpeak — and the same engine emits Nemeth braille.
+ * MathSpeak.
  *
  * So the model transcribes and nothing else; everything a reader consumes is
  * generated here, from the MathML, by rules that can be unit tested.
@@ -18,8 +18,6 @@ export interface AccessibleRenderings {
   clearspeak: string;
   /** MathSpeak: explicit structure markers, preferred by some readers. */
   mathspeak: string;
-  /** Nemeth braille, as Unicode braille patterns. */
-  braille: string;
 }
 
 /**
@@ -46,11 +44,10 @@ async function render(mathml: string, config: Parameters<typeof sre.setupEngine>
 }
 
 /**
- * Renders one MathML string as speech and braille.
+ * Renders one MathML string in both rule sets.
  *
  * Callers pass MathML derived from the model's LaTeX rather than MathML the
- * model wrote, so the speech, the braille and the rendered formula cannot
- * disagree with one another.
+ * model wrote, so the speech and the rendered formula cannot disagree.
  */
 export async function renderAccessible(mathml: string): Promise<AccessibleRenderings> {
   return serialize(async () => ({
@@ -65,12 +62,6 @@ export async function renderAccessible(mathml: string): Promise<AccessibleRender
       domain: 'mathspeak',
       style: 'default',
       modality: 'speech',
-    }),
-    braille: await render(mathml, {
-      locale: 'nemeth',
-      domain: 'default',
-      style: 'default',
-      modality: 'braille',
     }),
   }));
 }

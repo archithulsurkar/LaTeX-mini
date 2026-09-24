@@ -76,7 +76,7 @@ export const PROMPT = `Analyze the provided image of a document page. Your task 
 1.  **Full Text Content**: Transcribe all the text from the image, maintaining the original paragraph structure as best as possible.
 2.  **Formulas**: Identify all distinct mathematical or chemical formulas, and give the LaTeX for each.
 
-Transcribe only. Do not describe the formulas and do not write MathML. The screen-reader description, the MathML and the braille are generated from your LaTeX by a rule-based engine, so anything you write for those is discarded.
+Transcribe only. Do not describe the formulas and do not write MathML. The screen-reader description and the MathML are generated from your LaTeX by a rule-based engine, so anything you write for those is discarded.
 
 LaTeX rules — the output is compiled and converted, so it must be valid LaTeX, not Unicode:
 - Use commands, never Unicode symbols: \pm not ±, \sqrt{...} not √, \times not ×, \rightarrow not →, \Delta not Δ, \leq not ≤.
@@ -120,9 +120,9 @@ export const RESPONSE_JSON_SCHEMA = {
  *
  * Two passes. First the Unicode the model emitted despite the prompt is
  * rewritten as commands — local models ignore those rules routinely and hosted
- * ones slip occasionally. Then MathML, speech and braille are derived from that
- * LaTeX by rule, so the four representations cannot contradict one another and
- * none of them is invented per request.
+ * ones slip occasionally. Then MathML and speech are derived from that LaTeX by
+ * rule, so the three representations cannot contradict one another and none of
+ * them is invented per request.
  *
  * A formula whose LaTeX will not parse yields no derived output at all and is
  * flagged instead: narrating an error to a blind reader is worse than telling a
@@ -135,11 +135,11 @@ async function enrich(result: ModelResult): Promise<RemediationResult> {
 
       try {
         const mathml = latexToMathml(latex);
-        const { clearspeak, mathspeak, braille } = await renderAccessible(mathml);
-        return { latex, mathml, description: clearspeak, mathspeak, braille, needsReview: false };
+        const { clearspeak, mathspeak } = await renderAccessible(mathml);
+        return { latex, mathml, description: clearspeak, mathspeak, needsReview: false };
       } catch (error) {
         console.warn(`Formula flagged for review: ${(error as Error).message}`);
-        return { latex, mathml: '', description: '', mathspeak: '', braille: '', needsReview: true };
+        return { latex, mathml: '', description: '', mathspeak: '', needsReview: true };
       }
     }),
   );

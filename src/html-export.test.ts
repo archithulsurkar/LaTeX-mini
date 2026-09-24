@@ -25,7 +25,6 @@ const FORMULA: Formula = {
   mathml: '<math xmlns="http://www.w3.org/1998/Math/MathML"><mfrac><mn>1</mn><mn>2</mn></mfrac></math>',
   description: 'one half',
   mathspeak: 'StartFraction 1 Over 2 EndFraction',
-  braille: '⠹⠂⠌⠆⠼',
   needsReview: false,
 };
 
@@ -71,7 +70,6 @@ test('carries every representation', () => {
   const html = build();
   assert.match(html, /one half/);
   assert.match(html, /StartFraction/);
-  assert.match(html, /⠹⠂⠌⠆⠼/);
   assert.match(html, /\\frac\{1\}\{2\}/);
 });
 
@@ -84,7 +82,7 @@ test('omits the MathSpeak block when it duplicates ClearSpeak', () => {
 test('marks a flagged formula and omits derived output it does not have', () => {
   const html = build({
     formulas: [
-      { latex: '\\frac{1}', mathml: '', description: '', mathspeak: '', braille: '', needsReview: true },
+      { latex: '\\frac{1}', mathml: '', description: '', mathspeak: '', needsReview: true },
     ],
   });
   assert.match(html, /needs review/);
