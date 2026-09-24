@@ -28,7 +28,20 @@ export class RemediationService {
         .json()
         .then((parsed: ApiErrorBody) => parsed?.error)
         .catch(() => undefined);
-      throw new Error(detail ?? `Remediation failed (HTTP ${response.status}).`);
+
+      if (detail) throw new Error(detail);
+
+      // No JSON body means nothing is serving the API — typically the static
+      // demo, where there is no backend at all. Say what can be done instead
+      // rather than reporting a bare status code.
+      if (response.status === 404 || response.status === 405) {
+        throw new Error(
+          'This build has no model backend, so page images cannot be read. ' +
+            'Paste LaTeX instead — that runs in your browser — or run the app locally with a provider configured.',
+        );
+      }
+
+      throw new Error(`Remediation failed (HTTP ${response.status}).`);
     }
 
     return (await response.json()) as RemediationResult;
