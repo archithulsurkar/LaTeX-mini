@@ -1,7 +1,7 @@
 {
   "name": "formula-accessibility-remediator",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
@@ -10,7 +10,8 @@
     "build": "ng build",
     "start": "tsx --env-file-if-exists=.env server/index.ts",
     "preview": "npm run build && npm run start",
-    "test": "tsx --test \"src/**/*.test.ts\" \"server/**/*.test.ts\"",
+    "test": "tsx --test \"src/**/*.test.ts\" \"server/**/*.test.ts\" \"eval/**/*.test.ts\"",
+    "eval": "tsx eval/run.ts",
     "typecheck": "tsc -p tsconfig.server.json && ng build --configuration development",
     "test:e2e": "node e2e/ui.mjs",
     "test:compile": "tsx e2e/compile.ts"
@@ -25,6 +26,8 @@
     "express": "^5.2.1",
     "pdfjs-dist": "^6.3.289",
     "rxjs": "^7.8.2",
+    "speech-rule-engine": "^5.0.0-rc.4",
+    "temml": "^0.13.5",
     "tsx": "^4.23.13"
   },
   "devDependencies": {
