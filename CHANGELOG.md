@@ -26,6 +26,15 @@ only what has shipped.
   is still to be built.
 - `docs/institutional-workflow.md`, recording the constraints a campus
   disability resources office imposes and the questions still open.
+- Paste-LaTeX mode running entirely in the browser: no provider, no key, no
+  network. A "Listen" button speaks the description through the Web Speech API,
+  and "Try an example" means a first run needs no input.
+- Settings panel for switching model backend at runtime, offering Ollama,
+  OpenRouter, Groq, Together, Mistral, OpenAI and Gemini. A candidate is probed
+  before it is adopted, so a mistyped key leaves the working backend running.
+  Keys are held in server memory only.
+- GitHub Pages workflow publishing the browser-only demo (424 kB transferred),
+  so the project can be tried without installing anything.
 
 ### Changed
 

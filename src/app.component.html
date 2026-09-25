@@ -11,6 +11,80 @@
     </header>
 
     <!-- Announces idle → loading → success/error transitions to screen readers. -->
+    <div class="w-full max-w-xl mx-auto mb-4 flex justify-end">
+      <button (click)="openSettings()" class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.782-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.425-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+        Model backend
+      </button>
+    </div>
+
+    @if (settingsOpen()) {
+      <div class="w-full max-w-xl mx-auto mb-6 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6" role="region" aria-label="Model backend settings">
+        @if (providerOptions(); as options) {
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-800 dark:text-white">Model backend</h3>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Currently {{ options.active.name }} ({{ options.active.model }}). Only needed for reading page images.
+              </p>
+            </div>
+            <button (click)="closeSettings()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">
+              <span class="sr-only">Close settings</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+
+          <label for="provider-preset" class="mt-5 block text-sm font-medium text-slate-700 dark:text-slate-300">Provider</label>
+          <select id="provider-preset" [value]="selectedPresetId()" (change)="onPresetChange($any($event.target).value)"
+                  class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            @for (preset of options.presets; track preset.id) {
+              <option [value]="preset.id">{{ preset.label }}</option>
+            }
+          </select>
+
+          @if (selectedPreset(); as preset) {
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ preset.note }}</p>
+
+            <label for="provider-model" class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">Model</label>
+            <input id="provider-model" type="text" [value]="providerModel()" (input)="providerModel.set($any($event.target).value)"
+                   class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 font-mono text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+            @if (preset.needsKey) {
+              <label for="provider-key" class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">API key</label>
+              <input id="provider-key" type="password" autocomplete="off" [value]="providerKey()" (input)="providerKey.set($any($event.target).value)"
+                     placeholder="Stored on the server in memory only"
+                     class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 font-mono text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Held in memory until the server restarts — never written to disk, never sent back to this page.
+                @if (preset.keyUrl) {
+                  <a [href]="preset.keyUrl" target="_blank" rel="noopener noreferrer" class="underline hover:text-blue-600 dark:hover:text-blue-400">Get a key</a>.
+                }
+              </p>
+            }
+          }
+
+          @if (providerError()) {
+            <p class="mt-4 text-sm text-red-600 dark:text-red-400" role="alert">{{ providerError() }}</p>
+          }
+          @if (providerNotice()) {
+            <p class="mt-4 text-sm text-emerald-700 dark:text-emerald-400" role="status">{{ providerNotice() }}</p>
+          }
+
+          <button (click)="applyProvider()" [disabled]="providerBusy()"
+                  class="mt-5 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
+            {{ providerBusy() ? 'Checking…' : 'Use this backend' }}
+          </button>
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">The backend is tested before it is adopted; a bad key leaves the current one running.</p>
+        } @else {
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-white">No backend available</h3>
+          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            This build has no server, so page images cannot be read. Pasting LaTeX still works — it runs in your browser.
+          </p>
+          <button (click)="closeSettings()" class="mt-4 rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">Close</button>
+        }
+      </div>
+    }
+
     <div [attr.aria-busy]="status() === 'loading'" aria-live="polite">
     @switch (status()) {
       @case ('idle') {
