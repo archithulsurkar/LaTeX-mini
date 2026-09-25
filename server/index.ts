@@ -3,6 +3,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { UpstreamError } from './provider.js';
 import { resolveProvider } from './providers.js';
+import {
+  ProviderConfigError,
+  applyProvider,
+  getActiveProvider,
+  getProviderState,
+  initActiveProvider,
+} from './active-provider.js';
+import { PROVIDER_PRESETS, customUrlAllowed } from './provider-presets.js';
 import { RateLimiter } from './rate-limit.js';
 import {
   ACCEPTED_IMAGE_TYPES,
@@ -19,6 +27,7 @@ const DIST_DIR = path.resolve(fileURLToPath(new URL('../dist', import.meta.url))
 const JSON_LIMIT = `${Math.ceil((MAX_IMAGE_BYTES * 4) / 3 / 1024 / 1024) + 2}mb`;
 
 const provider = await resolveProvider();
+initActiveProvider(provider);
 
 const limiter = new RateLimiter();
 setInterval(() => limiter.prune(), RATE_LIMIT_WINDOW_MS).unref();
@@ -35,8 +44,58 @@ app.disable('x-powered-by');
 app.use(express.json({ limit: JSON_LIMIT }));
 
 app.get('/api/health', async (_req, res) => {
-  const status = await provider.check();
-  res.json({ ok: status.ok, provider: provider.name, model: provider.model, detail: status.detail });
+  const active = getActiveProvider();
+  const status = await active.check();
+  res.json({ ok: status.ok, provider: active.name, model: active.model, detail: status.detail });
+});
+
+/** The choices the settings panel offers, plus what is running now. */
+app.get('/api/providers', (_req, res) => {
+  res.json({
+    presets: PROVIDER_PRESETS,
+    active: getProviderState(),
+    customUrlAllowed: customUrlAllowed(),
+  });
+});
+
+/**
+ * Switches backend at runtime.
+ *
+ * Rate limited like remediation, because each call reaches an upstream API and
+ * an unauthenticated endpoint that does so is an amplifier. The key is held in
+ * memory only and never echoed back.
+ */
+app.post('/api/provider', async (req, res) => {
+  const limit = limiter.check(req.ip ?? 'unknown');
+  if (!limit.allowed) {
+    res.set('Retry-After', String(limit.retryAfterSeconds));
+    return res.status(429).json({ error: `Too many requests. Try again in ${limit.retryAfterSeconds}s.`, code: 'rate_limited' });
+  }
+
+  const { presetId, model, apiKey, baseUrl } = (req.body ?? {}) as Record<string, unknown>;
+  if (typeof presetId !== 'string') {
+    return res.status(400).json({ error: 'A provider must be named.', code: 'bad_request' });
+  }
+
+  try {
+    const { state, check } = await applyProvider({
+      presetId,
+      model: typeof model === 'string' ? model : undefined,
+      apiKey: typeof apiKey === 'string' ? apiKey : undefined,
+      baseUrl: typeof baseUrl === 'string' ? baseUrl : undefined,
+    });
+
+    // A slow local model and a fast hosted one need different allowances.
+    server.requestTimeout = getActiveProvider().timeoutMs + 30_000;
+    console.log(`Provider switched to ${state.name} (${state.model})`);
+    res.json({ active: state, detail: check.detail });
+  } catch (error) {
+    if (error instanceof ProviderConfigError) {
+      return res.status(400).json({ error: error.message, code: 'bad_request' });
+    }
+    console.error('Provider switch failed:', error);
+    res.status(502).json({ error: 'Could not reach that provider.', code: 'upstream_error' });
+  }
 });
 
 app.post('/api/remediate', async (req, res) => {
@@ -70,7 +129,7 @@ app.post('/api/remediate', async (req, res) => {
   }
 
   try {
-    res.json(await provider.remediateImage(image, mimeType));
+    res.json(await getActiveProvider().remediateImage(image, mimeType));
   } catch (error) {
     if (error instanceof UpstreamError) {
       console.error('Remediation failed:', error.message, error.cause ?? '');

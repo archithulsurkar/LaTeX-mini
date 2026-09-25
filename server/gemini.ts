@@ -36,10 +36,16 @@ export class GeminiProvider implements RemediationProvider {
 
   private readonly pacer: Pacer;
 
+  private readonly apiKey?: string;
+
   constructor(
     model = process.env.GEMINI_MODEL ?? DEFAULT_MODEL,
     requestsPerMinute = Number(process.env.GEMINI_RPM ?? DEFAULT_RPM),
+    // Supplied directly when the settings panel configures a provider at
+    // runtime; falls back to the environment for the usual startup path.
+    apiKey = process.env.API_KEY,
   ) {
+    this.apiKey = apiKey;
     this.model = model;
     this.pacer = new Pacer(requestsPerMinute);
     this.timeoutMs = Number(process.env.GEMINI_TIMEOUT_MS ?? DEFAULT_TIMEOUT_MS);
@@ -53,7 +59,7 @@ export class GeminiProvider implements RemediationProvider {
    * than at startup.
    */
   async check(): Promise<CheckResult> {
-    if (!process.env.API_KEY) {
+    if (!this.apiKey) {
       return { ok: false, detail: 'API_KEY is not set.' };
     }
     // The probe is a billable call and /api/health is unauthenticated.
@@ -92,7 +98,7 @@ export class GeminiProvider implements RemediationProvider {
 
   private getClient(): GoogleGenAI {
     if (!this.client) {
-      const apiKey = process.env.API_KEY;
+      const apiKey = this.apiKey;
       if (!apiKey) {
         throw new UpstreamError('API_KEY environment variable not set.', 500);
       }

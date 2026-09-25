@@ -6,6 +6,7 @@ import { Formula, RemediationService, RemediationResult } from './services/remed
 import { escapeLatex, pageImageFilename, toDisplayMath } from './latex';
 import { buildStandaloneHtml } from './html-export';
 import { EXAMPLE_LATEX, remediateLatex } from './local-remediation';
+import { ProviderService, type ProviderOptions } from './services/provider.service';
 import { sanitizeMathml } from './mathml';
 import { MAX_PDF_PAGES } from './shared/remediation.types';
 
@@ -160,6 +161,74 @@ export class AppComponent {
 
   /** Text in the paste-LaTeX box. */
   latexInput: WritableSignal<string> = signal('');
+
+  private providerService = inject(ProviderService);
+
+  /** Null until loaded, and stays null when there is no backend at all. */
+  providerOptions: WritableSignal<ProviderOptions | null> = signal(null);
+  settingsOpen: WritableSignal<boolean> = signal(false);
+  selectedPresetId: WritableSignal<string> = signal('');
+  providerModel: WritableSignal<string> = signal('');
+  providerKey: WritableSignal<string> = signal('');
+  providerBusy: WritableSignal<boolean> = signal(false);
+  providerError: WritableSignal<string> = signal('');
+  providerNotice: WritableSignal<string> = signal('');
+
+  readonly selectedPreset = computed(() =>
+    this.providerOptions()?.presets.find((preset) => preset.id === this.selectedPresetId()),
+  );
+
+  async openSettings(): Promise<void> {
+    this.providerError.set('');
+    this.providerNotice.set('');
+    this.settingsOpen.set(true);
+
+    const options = await this.providerService.load();
+    this.providerOptions.set(options);
+
+    if (options) {
+      const current = options.presets.find((preset) => preset.id === options.active.presetId);
+      this.selectedPresetId.set(current?.id ?? options.presets[0]?.id ?? '');
+      this.providerModel.set(options.active.model);
+    }
+  }
+
+  closeSettings(): void {
+    this.settingsOpen.set(false);
+    // Never leave a key sitting in a signal once the panel is dismissed.
+    this.providerKey.set('');
+  }
+
+  onPresetChange(presetId: string): void {
+    this.selectedPresetId.set(presetId);
+    this.providerModel.set(this.selectedPreset()?.defaultModel ?? '');
+    this.providerKey.set('');
+    this.providerError.set('');
+  }
+
+  async applyProvider(): Promise<void> {
+    this.providerBusy.set(true);
+    this.providerError.set('');
+    this.providerNotice.set('');
+
+    try {
+      const active = await this.providerService.apply({
+        presetId: this.selectedPresetId(),
+        model: this.providerModel().trim() || undefined,
+        apiKey: this.providerKey().trim() || undefined,
+      });
+
+      this.providerNotice.set(`Now using ${active.name} (${active.model}).`);
+      this.providerKey.set('');
+
+      const options = this.providerOptions();
+      if (options) this.providerOptions.set({ ...options, active });
+    } catch (error) {
+      this.providerError.set(error instanceof Error ? error.message : 'Could not switch provider.');
+    } finally {
+      this.providerBusy.set(false);
+    }
+  }
 
   /**
    * Runs the deterministic pipeline in the browser over pasted LaTeX.
