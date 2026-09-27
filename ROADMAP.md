@@ -49,7 +49,7 @@ will be described here once they ship.
 - **`.tex` blob uses an unregistered media type** (`text/latex` rather than
   `application/x-tex`). (`src/app.component.ts`)
 
-## 0.3.0 — Correctness and trust
+## 0.4.0 — Correctness and trust
 
 Close the gap between "the model answered" and "the answer is right and usable".
 
@@ -72,7 +72,7 @@ Close the gap between "the model answered" and "the answer is right and usable".
   and checked before `provider.remediateImage`; re-uploading the same PDF
   currently re-spends the entire free-tier quota.
 
-## 0.4.0 — Measurement
+## 0.5.0 — Measurement
 
 The harness has landed (`eval/`, `npm run eval`) with the canonical-form metric
 and per-category reporting. What remains is the part that cannot be automated.
@@ -90,7 +90,7 @@ and per-category reporting. What remains is the part that cannot be automated.
 - Load test demonstrating the pacer and retry classifier under burst traffic,
   quantifying the 429s avoided.
 
-## 0.5.0 — Local formula detection
+## 0.6.0 — Local formula detection
 
 - Local layout/formula detection (Surya or PP-DocLayout via `onnxruntime-node`)
   over the canvas pdf.js already renders, sending cropped regions instead of
@@ -98,14 +98,14 @@ and per-category reporting. What remains is the part that cannot be automated.
   bounding boxes.
 - Hover-to-highlight linking each result to its region on the source page.
 
-## 0.6.0 — Output verification
+## 0.7.0 — Output verification
 
 - Visual round-trip verification: re-render the returned LaTeX (MathJax → SVG →
   raster) and compare it against the cropped source region with SSIM, producing a
   per-formula confidence score grounded in pixels rather than in the model's own
   report.
 
-## 0.7.0 — Accessibility conformance
+## 0.8.0 — Accessibility conformance
 
 - EPUB3 export with embedded MathML, validated with DAISY Ace in CI. (Tagged
   PDF/UA from LaTeX remains too unreliable to promise.)
