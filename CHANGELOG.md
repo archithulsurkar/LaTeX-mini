@@ -10,7 +10,13 @@ only what has shipped.
 
 ## [Unreleased]
 
-Nothing released since 0.3.0.
+### Changed
+
+- The HTML export is plain: black text on a white background in the browser's
+  default font, with no panels, colours or dark mode.
+- The export keeps the original text's layout (line breaks, blank lines,
+  indentation) instead of reflowing it into paragraphs, and the prompt asks the
+  model to transcribe that layout exactly, without reflowing or correcting it.
 
 ## [0.3.0] - 2026-09-27
 
