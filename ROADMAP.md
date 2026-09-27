@@ -7,9 +7,23 @@ release that carries them.
 
 ## Known issues
 
-From a full-repository review. Two hardening items are tracked privately and
-will be described here once they ship.
+From a full-repository review. One further hardening item is tracked privately
+and will be described here once it ships.
 
+- **Rate limiter is defeated behind a reverse proxy.** `RateLimiter` keys on
+  `req.ip` and the app never sets `trust proxy`, so behind Render, Fly, nginx or
+  Cloudflare every caller resolves to the proxy's address and shares one bucket:
+  one heavy user throttles everyone. Set `trust proxy` to the deployment's hop
+  count before any hosted deployment. The local executable and the Pages demo are
+  unaffected. (`server/index.ts`)
+- **Backend switching is server-wide.** `POST /api/provider` replaces the one
+  active provider for every client of that server, with no authentication. Right
+  for a single-user local install; a shared deployment must disable it or put it
+  behind an admin credential. (`server/index.ts`, `server/active-provider.ts`)
+- **Executable is unsigned and Windows-only.** SmartScreen warns on first run,
+  and there is no macOS or Linux build. Signing needs a code-signing
+  certificate; other platforms need `tools/build-exe.mjs` to handle each
+  platform's Node binary and its SEA injection flags. (`tools/build-exe.mjs`)
 - **Request timeout does not cover retries.** `server.requestTimeout` is derived
   from a single attempt (`provider.timeoutMs + 30s`) while `withRetry` makes up
   to three, each with its own full `AbortSignal.timeout`. The socket can be torn
@@ -30,9 +44,6 @@ will be described here once they ship.
 - **No client-side image size guard.** A dense page rendered at
   `PDF_RENDER_SCALE` 2.0 can exceed the server's 8MB ceiling; the page is then
   reported only as "could not be analyzed". (`src/app.component.ts`)
-- **Stale page images after a failed run.** `uploadedImages` is not cleared on
-  the failure path, so a later partial success exports figures from a discarded
-  run. (`src/app.component.ts`)
 - **Compile harness misreports failures.** It splits the pdflatex log on
   `os.EOL`, but pdflatex writes `\n` even on Windows, so every failure prints
   "unknown error". (`e2e/compile.ts`)
@@ -49,40 +60,41 @@ will be described here once they ship.
 - **`.tex` blob uses an unregistered media type** (`text/latex` rather than
   `application/x-tex`). (`src/app.component.ts`)
 
-## 0.4.0 — Correctness and trust
+## 0.4.0 — Correction workflow
 
 Close the gap between "the model answered" and "the answer is right and usable".
 
-- **HTML export with embedded MathML.** The tool is an accessibility remediator
-  that currently emits only `.tex`, a format no screen reader consumes. HTML plus
-  the MathML already generated and sanitized is directly consumable by NVDA, JAWS
-  and VoiceOver. No new dependencies.
 - **Inline formula placement.** `RemediationResult` keeps `originalText` and
-  `formulas` disjoint, so the export prints all prose and then all formulas,
-  destroying the reading order of the page. Have the model emit `[FORMULA_n]`
-  placeholders inside `originalText` and substitute display math at each marker.
+  `formulas` disjoint, so both exports print all prose and then all formulas,
+  destroying the reading order of the page. Ask for `[FORMULA_n]` placeholders
+  inside `originalText` (the `PROMPT` and `RESPONSE_JSON_SCHEMA` in
+  `server/provider.ts`, since `ModelResult` is what the model returns) and
+  substitute display math at each marker.
 - **Per-formula editing with live preview.** Vision models misread subscripts and
-  there is no way to correct one; results render read-only. A remediation tool
-  without a correction step is a demo, not a workflow.
-- **Client-side LaTeX validation and review flags.** Parse each formula with
-  KaTeX in the browser and badge the failures, plus any formula `normalizeLatex`
-  had to rewrite. Today a bad formula surfaces only after the user downloads the
-  `.tex` and runs pdflatex.
+  there is no way to correct one; results render read-only. Re-run
+  `enrichFormula` on each edit so MathML and speech follow the corrected LaTeX. A
+  remediation tool without a correction step is a demo, not a workflow.
+- **Flag rewritten formulas.** Formulas temml cannot convert are already flagged
+  `needsReview`. Also flag any formula `normalizeLatex` had to rewrite from
+  Unicode, since that is where transcription guesses hide.
+  (`src/shared/enrich.ts`)
 - **Content-addressed result cache.** Keyed on the SHA-256 of the image payload
   and checked before `provider.remediateImage`; re-uploading the same PDF
   currently re-spends the entire free-tier quota.
 
 ## 0.5.0 — Measurement
 
-The harness has landed (`eval/`, `npm run eval`) with the canonical-form metric
-and per-category reporting. What remains is the part that cannot be automated.
+The harness exists (`npm run eval`); what it lacks is data, and the part that
+cannot be automated.
 
 - Labelled benchmark set of 100–150 formulas spanning clean typeset, dense
   multi-column, handwritten and chemical notation. Hand-labelling this is a full
   day of work and it is the real cost of this milestone — see `eval/README.md`
   for the protocol.
-- Screen-reader validation of the `speech` field: the part no other maths-OCR
-  benchmark has, and the reason this set is worth publishing.
+- Screen-reader validation of the ClearSpeak `description` and `mathspeak`
+  renderings: the part no other maths-OCR benchmark has, and the reason this set
+  is worth publishing. Rename the dataset's `speech` label to match
+  (`eval/dataset.ts`).
 - CI matrix running the benchmark across every backend behind
   `RemediationProvider`, with results published in the README. Hosted providers
   need live keys and cost money per run, so gate them behind a nightly or manual
@@ -100,8 +112,8 @@ and per-category reporting. What remains is the part that cannot be automated.
 
 ## 0.7.0 — Output verification
 
-- Visual round-trip verification: re-render the returned LaTeX (MathJax → SVG →
-  raster) and compare it against the cropped source region with SSIM, producing a
+- Visual round-trip verification: rasterize the temml MathML the app already
+  produces (headless browser screenshot) and compare it against the cropped source region with SSIM, producing a
   per-formula confidence score grounded in pixels rather than in the model's own
   report.
 
