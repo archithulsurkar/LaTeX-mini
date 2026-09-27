@@ -71,7 +71,7 @@ export class UpstreamError extends Error {
 }
 
 export const PROMPT = `Analyze the provided image of a document page. Your task is to extract two things:
-1.  **Full Text Content**: Transcribe all the text from the image, maintaining the original paragraph structure as best as possible.
+1.  **Full Text Content**: Transcribe all the text from the image exactly as written, keeping its layout in plain text: the original line breaks, blank lines between paragraphs, headings on their own line, list bullets and numbers, and indentation. Do not reflow, summarise, correct or reorder the text.
 2.  **Formulas**: Identify all distinct mathematical or chemical formulas, and give the LaTeX for each.
 
 Transcribe only. Do not describe the formulas and do not write MathML. The screen-reader description and the MathML are generated from your LaTeX by a rule-based engine, so anything you write for those is discarded.
