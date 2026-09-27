@@ -9,6 +9,10 @@ import { EXAMPLE_LATEX, remediateLatex } from './local-remediation';
 import { ProviderService, type ProviderOptions } from './services/provider.service';
 import { sanitizeMathml } from './mathml';
 import { MAX_PDF_PAGES } from './shared/remediation.types';
+import { enrichFormulas } from './shared/enrich';
+import { AuthService } from './services/auth.service';
+import { HistoryService } from './services/history.service';
+import { describeItem, toHistoryInsert, type HistoryItem, type HistorySource } from './history';
 
 // Served from the app origin (see the `assets` entry in angular.json) so the
 // worker build always matches the bundled library version.
@@ -139,12 +143,17 @@ export class AppComponent {
       }
 
       if (failedPages.length) {
-        this.appendNotice(`Page(s) ${failedPages.join(', ')} could not be analyzed and were skipped.`);
+        this.appendNotice(
+          failedPages.length === 1
+            ? `Page ${failedPages[0]} couldn’t be read, so it was skipped.`
+            : `Pages ${failedPages.join(', ')} couldn’t be read, so they were skipped.`,
+        );
       }
 
       if (merged.formulas.length > 0 || merged.originalText) {
         this.remediationResult.set(merged);
         this.status.set('success');
+        void this.saveToHistory(merged, 'upload', pages.length, file.name);
       } else {
         this.errorMessage.set('No formulas or text were found in the file. Please try a different one.');
         this.status.set('error');
@@ -178,7 +187,164 @@ export class AppComponent {
     this.providerOptions()?.presets.find((preset) => preset.id === this.selectedPresetId()),
   );
 
+  // --- Accounts and history -------------------------------------------------
+
+  private auth = inject(AuthService);
+  private historyService = inject(HistoryService);
+
+  readonly user = this.auth.user;
+  readonly describeItem = describeItem;
+
+  private static readonly dateFormat = new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+  /** "27 Sept 2026, 2:05 pm", in the reader's own locale. */
+  formatDate(iso: string): string {
+    return AppComponent.dateFormat.format(new Date(iso));
+  }
+
+  accountOpen: WritableSignal<boolean> = signal(false);
+  historyOpen: WritableSignal<boolean> = signal(false);
+  signInEmail: WritableSignal<string> = signal('');
+  /** Where the sign-in email went, once sent. */
+  linkSentTo: WritableSignal<string> = signal('');
+  authBusy: WritableSignal<boolean> = signal(false);
+  authError: WritableSignal<string> = signal('');
+
+  historyItems: WritableSignal<HistoryItem[] | null> = signal(null);
+  historyError: WritableSignal<string> = signal('');
+  /** The item awaiting a second click to confirm deletion. */
+  confirmDeleteId: WritableSignal<string | null> = signal(null);
+  /** Quiet line under the results: saved, or why it wasn't. */
+  saveStatus: WritableSignal<string> = signal('');
+
+  /** Only one panel is open at a time; opening one closes the rest. */
+  private closePanels(): void {
+    if (this.settingsOpen()) this.closeSettings();
+    this.accountOpen.set(false);
+    this.historyOpen.set(false);
+  }
+
+  toggleAccount(): void {
+    const open = !this.accountOpen();
+    this.closePanels();
+    this.accountOpen.set(open);
+    this.authError.set('');
+  }
+
+  async sendMagicLink(): Promise<void> {
+    const email = this.signInEmail().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.authError.set('Enter a full email address, like name@example.com.');
+      return;
+    }
+    this.authBusy.set(true);
+    this.authError.set('');
+    try {
+      await this.auth.sendMagicLink(email);
+      this.linkSentTo.set(email);
+    } catch (error) {
+      this.authError.set(error instanceof Error ? error.message : 'Could not send the email.');
+    } finally {
+      this.authBusy.set(false);
+    }
+  }
+
+  async signOut(): Promise<void> {
+    try {
+      await this.auth.signOut();
+    } catch (error) {
+      this.authError.set(error instanceof Error ? error.message : 'Could not sign out.');
+      return;
+    }
+    this.accountOpen.set(false);
+    this.historyOpen.set(false);
+    this.historyItems.set(null);
+    this.linkSentTo.set('');
+    this.signInEmail.set('');
+  }
+
+  async toggleHistory(): Promise<void> {
+    const open = !this.historyOpen();
+    this.closePanels();
+    this.historyOpen.set(open);
+    if (open) await this.loadHistory();
+  }
+
+  private async loadHistory(): Promise<void> {
+    this.historyError.set('');
+    this.confirmDeleteId.set(null);
+    try {
+      this.historyItems.set(await this.historyService.list());
+    } catch (error) {
+      this.historyError.set(error instanceof Error ? error.message : 'Could not load your history.');
+    }
+  }
+
+  /** Reopens a saved item. MathML and speech are rebuilt from its LaTeX. */
+  async openHistoryItem(item: HistoryItem): Promise<void> {
+    this.stopSpeaking();
+    this.historyOpen.set(false);
+    this.notice.set('');
+    this.saveStatus.set('');
+    this.uploadedImages.set([]);
+    this.status.set('loading');
+    try {
+      const formulas = await enrichFormulas(item.latex);
+      this.remediationResult.set({ originalText: item.original_text, formulas });
+      this.status.set('success');
+      if (item.source === 'upload') {
+        this.appendNotice('Page images are not saved with your history, so this result has none.');
+      }
+    } catch (error) {
+      this.errorMessage.set(error instanceof Error ? error.message : 'Could not reopen that item.');
+      this.status.set('error');
+    }
+  }
+
+  async deleteHistoryItem(item: HistoryItem): Promise<void> {
+    if (this.confirmDeleteId() !== item.id) {
+      this.confirmDeleteId.set(item.id);
+      return;
+    }
+    try {
+      await this.historyService.remove(item.id);
+      this.historyItems.update((items) => items?.filter((existing) => existing.id !== item.id) ?? null);
+    } catch (error) {
+      this.historyError.set(error instanceof Error ? error.message : 'Could not delete that item.');
+    } finally {
+      this.confirmDeleteId.set(null);
+    }
+  }
+
+  /** Saves quietly when signed in; a failure is reported but never blocks the result. */
+  private async saveToHistory(
+    result: RemediationResult,
+    source: HistorySource,
+    pageCount: number,
+    fileName?: string,
+  ): Promise<void> {
+    this.saveStatus.set('');
+    if (!this.user()) return;
+    const row = toHistoryInsert(result, source, pageCount, fileName);
+    if (!row) return;
+    try {
+      await this.historyService.save(row);
+      this.saveStatus.set('Saved to your history.');
+      if (this.historyItems()) this.historyItems.set(null);
+    } catch (error) {
+      this.saveStatus.set(error instanceof Error ? error.message : 'Could not save to your history.');
+    }
+  }
+
   async openSettings(): Promise<void> {
+    this.accountOpen.set(false);
+    this.historyOpen.set(false);
     this.providerError.set('');
     this.providerNotice.set('');
     this.settingsOpen.set(true);
@@ -255,10 +421,13 @@ export class AppComponent {
 
       this.remediationResult.set(result);
       this.status.set('success');
+      void this.saveToHistory(result, 'paste', 0);
 
       const flagged = result.formulas.filter((formula) => formula.needsReview).length;
       if (flagged) {
-        this.appendNotice(`${flagged} formula(s) could not be converted and are flagged for review.`);
+        this.appendNotice(
+          flagged === 1 ? '1 formula needs a second look.' : `${flagged} formulas need a second look.`,
+        );
       }
     } catch (error) {
       console.error(error);
@@ -305,6 +474,7 @@ export class AppComponent {
     this.notice.set('');
     this.progress.set(null);
     this.copyFeedback.set('');
+    this.saveStatus.set('');
   }
 
   async copyToClipboard(text: string, label: string): Promise<void> {
