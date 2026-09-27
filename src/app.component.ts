@@ -4,6 +4,9 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import * as pdfjsLib from 'pdfjs-dist';
 import { Formula, RemediationService, RemediationResult } from './services/remediation.service';
 import { escapeLatex, pageImageFilename, toDisplayMath } from './latex';
+import { buildStandaloneHtml } from './html-export';
+import { EXAMPLE_LATEX, remediateLatex } from './local-remediation';
+import { ProviderService, type ProviderOptions } from './services/provider.service';
 import { sanitizeMathml } from './mathml';
 import { MAX_PDF_PAGES } from './shared/remediation.types';
 
@@ -34,6 +37,9 @@ interface PageImage {
 
 /** Rendering scale for PDF pages. Higher reads small subscripts more reliably. */
 const PDF_RENDER_SCALE = 2.0;
+
+/** Longest edge of the page images embedded in the HTML export. */
+const EMBEDDED_IMAGE_MAX_WIDTH = 1200;
 
 const ACCEPTED_UPLOAD_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'] as const;
 type UploadType = (typeof ACCEPTED_UPLOAD_TYPES)[number];
@@ -153,7 +159,145 @@ export class AppComponent {
     }
   }
 
+  /** Text in the paste-LaTeX box. */
+  latexInput: WritableSignal<string> = signal('');
+
+  private providerService = inject(ProviderService);
+
+  /** Null until loaded, and stays null when there is no backend at all. */
+  providerOptions: WritableSignal<ProviderOptions | null> = signal(null);
+  settingsOpen: WritableSignal<boolean> = signal(false);
+  selectedPresetId: WritableSignal<string> = signal('');
+  providerModel: WritableSignal<string> = signal('');
+  providerKey: WritableSignal<string> = signal('');
+  providerBusy: WritableSignal<boolean> = signal(false);
+  providerError: WritableSignal<string> = signal('');
+  providerNotice: WritableSignal<string> = signal('');
+
+  readonly selectedPreset = computed(() =>
+    this.providerOptions()?.presets.find((preset) => preset.id === this.selectedPresetId()),
+  );
+
+  async openSettings(): Promise<void> {
+    this.providerError.set('');
+    this.providerNotice.set('');
+    this.settingsOpen.set(true);
+
+    const options = await this.providerService.load();
+    this.providerOptions.set(options);
+
+    if (options) {
+      const current = options.presets.find((preset) => preset.id === options.active.presetId);
+      this.selectedPresetId.set(current?.id ?? options.presets[0]?.id ?? '');
+      this.providerModel.set(options.active.model);
+    }
+  }
+
+  closeSettings(): void {
+    this.settingsOpen.set(false);
+    // Never leave a key sitting in a signal once the panel is dismissed.
+    this.providerKey.set('');
+  }
+
+  onPresetChange(presetId: string): void {
+    this.selectedPresetId.set(presetId);
+    this.providerModel.set(this.selectedPreset()?.defaultModel ?? '');
+    this.providerKey.set('');
+    this.providerError.set('');
+  }
+
+  async applyProvider(): Promise<void> {
+    this.providerBusy.set(true);
+    this.providerError.set('');
+    this.providerNotice.set('');
+
+    try {
+      const active = await this.providerService.apply({
+        presetId: this.selectedPresetId(),
+        model: this.providerModel().trim() || undefined,
+        apiKey: this.providerKey().trim() || undefined,
+      });
+
+      this.providerNotice.set(`Now using ${active.name} (${active.model}).`);
+      this.providerKey.set('');
+
+      const options = this.providerOptions();
+      if (options) this.providerOptions.set({ ...options, active });
+    } catch (error) {
+      this.providerError.set(error instanceof Error ? error.message : 'Could not switch provider.');
+    } finally {
+      this.providerBusy.set(false);
+    }
+  }
+
+  /**
+   * Runs the deterministic pipeline in the browser over pasted LaTeX.
+   *
+   * No provider, no key, no network — transcription is the only step that ever
+   * needed a model, and this path skips it.
+   */
+  async remediatePastedLatex(): Promise<void> {
+    const input = this.latexInput().trim();
+    if (!input) return;
+
+    this.notice.set('');
+    this.progress.set(null);
+    this.uploadedImages.set([]);
+    this.status.set('loading');
+
+    try {
+      const result = await remediateLatex(input);
+      if (!result.formulas.length) {
+        this.errorMessage.set('No formulas found in that input.');
+        this.status.set('error');
+        return;
+      }
+
+      this.remediationResult.set(result);
+      this.status.set('success');
+
+      const flagged = result.formulas.filter((formula) => formula.needsReview).length;
+      if (flagged) {
+        this.appendNotice(`${flagged} formula(s) could not be converted and are flagged for review.`);
+      }
+    } catch (error) {
+      console.error(error);
+      this.errorMessage.set(error instanceof Error ? error.message : 'Could not process that LaTeX.');
+      this.status.set('error');
+    }
+  }
+
+  /** Fills the box with a sample, so a first run needs no input of any kind. */
+  loadExample(): void {
+    this.latexInput.set(EXAMPLE_LATEX);
+    void this.remediatePastedLatex();
+  }
+
+  /**
+   * Speaks a description aloud with the browser's own voice.
+   *
+   * The point of ClearSpeak is how it sounds, which is not conveyed by reading
+   * it off a screen. Uses the Web Speech API, so it costs nothing and works
+   * offline.
+   */
+  speak(text: string): void {
+    const speech = window.speechSynthesis;
+    if (!speech) {
+      this.showCopyFeedback('This browser cannot speak text aloud.');
+      return;
+    }
+
+    speech.cancel();
+    speech.speak(new SpeechSynthesisUtterance(text));
+  }
+
+  stopSpeaking(): void {
+    window.speechSynthesis?.cancel();
+  }
+
   reset(): void {
+    this.stopSpeaking();
+    this.latexInput.set('');
     this.status.set('idle');
     this.remediationResult.set({ formulas: [], originalText: '' });
     this.errorMessage.set('');
@@ -182,6 +326,69 @@ export class AppComponent {
 
   private appendNotice(message: string): void {
     this.notice.update((current) => (current ? `${current} ${message}` : message));
+  }
+
+  /**
+   * Saves the whole remediation as one self-contained HTML file.
+   *
+   * This is the export that reaches a reader. A `.tex` has to be compiled
+   * first, and the PDF that comes out is not accessible unless it is also
+   * tagged — two toolchain steps, both needing software the reader does not
+   * have. HTML with inline MathML opens in any browser, offline, and screen
+   * readers read the mathematics directly.
+   */
+  async exportToHtml(): Promise<void> {
+    const result = this.remediationResult();
+    if (!result.formulas.length && !result.originalText) {
+      return;
+    }
+
+    const pageImages = await Promise.all(
+      this.uploadedImages().map((dataUrl) => AppComponent.shrinkForEmbedding(dataUrl)),
+    );
+
+    const html = buildStandaloneHtml({
+      originalText: result.originalText,
+      formulas: result.formulas,
+      pageImages,
+    });
+
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    AppComponent.triggerDownload(url, 'remediated-document.html');
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Re-encodes a page image smaller for embedding.
+   *
+   * Pages are rendered at 2x because small subscripts need the resolution; a
+   * reader looking at the figure does not, and base64 inflates by a third, so
+   * embedding the originals would produce multi-megabyte files. Returns the
+   * original if re-encoding is not possible — a large file beats a broken one.
+   */
+  private static async shrinkForEmbedding(dataUrl: string): Promise<string> {
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const element = new Image();
+        element.onload = () => resolve(element);
+        element.onerror = () => reject(new Error('Could not read the page image.'));
+        element.src = dataUrl;
+      });
+
+      if (image.width <= EMBEDDED_IMAGE_MAX_WIDTH) return dataUrl;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = EMBEDDED_IMAGE_MAX_WIDTH;
+      canvas.height = Math.round(image.height * (EMBEDDED_IMAGE_MAX_WIDTH / image.width));
+
+      const context = canvas.getContext('2d');
+      if (!context) return dataUrl;
+
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.85);
+    } catch {
+      return dataUrl;
+    }
   }
 
   exportToLatex(): void {

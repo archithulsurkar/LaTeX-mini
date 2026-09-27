@@ -10,12 +10,22 @@ only what has shipped.
 
 ## [Unreleased]
 
+Nothing released since 0.3.0.
+
+## [0.3.0] - 2026-09-27
+
+The model now transcribes and nothing else; everything a reader receives is
+derived from its LaTeX by rule. The deterministic half runs with no model at all,
+in a browser or from a single executable.
+
 ### Added
 
-- ClearSpeak and MathSpeak speech and Nemeth braille, generated from MathML by
-  the Speech Rule Engine. Braille is new output; the description is no longer
-  written by the model. See
+- ClearSpeak and MathSpeak renderings generated from MathML by the Speech Rule
+  Engine; the description is no longer written by the model. See
   [ADR 0001](docs/adr/0001-deterministic-speech.md).
+- Single-file HTML export carrying inline MathML, the spoken description and the
+  page images as data URIs. Opens offline in any browser with no toolchain, which
+  `.tex` never could.
 - A formula whose LaTeX will not convert is flagged `needsReview` and shown as
   such, instead of having a conversion error narrated to the reader.
 - Benchmark harness under `eval/`: dataset schema and loader, a canonical-form
@@ -24,6 +34,18 @@ only what has shipped.
   is still to be built.
 - `docs/institutional-workflow.md`, recording the constraints a campus
   disability resources office imposes and the questions still open.
+- Paste-LaTeX mode running entirely in the browser: no provider, no key, no
+  network. A "Listen" button speaks the description through the Web Speech API,
+  and "Try an example" means a first run needs no input.
+- Settings panel for switching model backend at runtime, offering Ollama,
+  OpenRouter, Groq, Together, Mistral, OpenAI and Gemini. A candidate is probed
+  before it is adopted, so a mistyped key leaves the working backend running.
+  Keys are held in server memory only.
+- GitHub Pages workflow publishing the browser-only demo (424 kB transferred),
+  so the project can be tried without installing anything.
+- Single executable for Windows (`npm run build:exe`): server, frontend and
+  speech tables in one folder, runnable with no Node.js installed.
+  `--self-test` checks an install without starting a server.
 
 ### Changed
 

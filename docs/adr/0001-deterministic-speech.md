@@ -1,4 +1,4 @@
-# 1. Generate speech and braille by rule, not by model
+# 1. Generate speech by rule, not by model
 
 Date: 2026-09-24
 
@@ -24,7 +24,7 @@ actually receives — and it was the least trustworthy part of the system:
 Meanwhile, speaking mathematics is a solved problem with published rule sets.
 ClearSpeak and MathSpeak both specify how an expression should be read aloud,
 and the Speech Rule Engine — the library MathJax itself uses — implements them
-and additionally emits Nemeth braille.
+and is maintained alongside them.
 
 ## Decision
 
@@ -34,7 +34,7 @@ of each formula.
 Everything a reader consumes is derived from that LaTeX:
 
 - LaTeX → MathML via temml (`src/shared/latex-to-mathml.ts`)
-- MathML → ClearSpeak speech, MathSpeak speech, Nemeth braille via the Speech
+- MathML → ClearSpeak speech and MathSpeak speech via the Speech
   Rule Engine (`src/shared/speech.ts`)
 
 A formula whose LaTeX will not parse produces no derived output and is flagged
@@ -47,10 +47,9 @@ Good:
 
 - The accessible output is deterministic and unit-testable. "Renders one half as
   'one half'" is now an assertion, not a hope.
-- The four representations of a formula cannot contradict each other, because
-  three of them are computed from the fourth.
+- The three representations of a formula cannot contradict each other, because
+  two of them are computed from the third.
 - Output conforms to rule sets screen-reader users already know.
-- Braille comes free, which no comparable web tool offers.
 - The model's output shrinks to a transcription, cutting tokens per formula.
 - The model becomes a replaceable component behind `RemediationProvider` rather
   than the thing the product depends on.

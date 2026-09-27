@@ -1,16 +1,12 @@
 /**
  * Minimal ambient types for speech-rule-engine, which ships no declarations.
  *
- * Only the surface this project uses is declared. Note there is no `toBraille`
- * in v5: braille comes from `toSpeech` after the engine is switched to the
- * braille modality, which is why {@link SreConfig.modality} is part of every
- * call site rather than an afterthought.
+ * Only the surface this project uses is declared.
  */
 declare module 'speech-rule-engine' {
   export interface SreConfig {
-    /** `en` for speech; `nemeth` (or `euro`) for braille. */
     locale?: string;
-    /** Rule set: `clearspeak`, `mathspeak`, or `default` for braille. */
+    /** Rule set: `clearspeak` or `mathspeak`. */
     domain?: string;
     /** Verbosity within the rule set, e.g. `default`, `brief`, `sbrief`. */
     style?: string;
