@@ -5,7 +5,7 @@
       <div class="flex items-start justify-between gap-4">
         <h1 class="display text-3xl sm:text-4xl font-semibold">Formula Accessibility Remediator</h1>
         <button (click)="settingsOpen() ? closeSettings() : openSettings()" [attr.aria-expanded]="settingsOpen()" aria-controls="settings-panel"
-                class="press shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+                class="btn shrink-0 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-200/70 dark:text-slate-300 dark:hover:bg-slate-800">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.782-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.425-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
           Model backend
         </button>
@@ -17,45 +17,40 @@
 
     @if (settingsOpen()) {
       <!-- Grows out of the Model backend button above it (origin top right), and leaves the same way. -->
-      <div id="settings-panel" class="sheet-in mb-8 bg-white dark:bg-slate-800 rounded-2xl shadow-xl ring-1 ring-slate-900/5 dark:ring-white/10 p-6" role="region" aria-label="Model backend settings">
+      <div id="settings-panel" class="card sheet-in mb-8 p-6 shadow-xl" role="region" aria-label="Model backend settings">
         @if (providerOptions(); as options) {
           <div class="flex items-start justify-between gap-4">
             <div>
               <h2 class="text-lg font-semibold">Model backend</h2>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Using {{ options.active.name }} ({{ options.active.model }}). Only needed for reading page images.
-              </p>
+              <p class="hint mt-1">Using {{ options.active.name }} ({{ options.active.model }}). Only needed for reading page images.</p>
             </div>
-            <button (click)="closeSettings()" class="press rounded-full p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+            <button (click)="closeSettings()" class="btn-icon">
               <span class="sr-only">Close settings</span>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
-          <label for="provider-preset" class="mt-5 block text-sm font-medium text-slate-700 dark:text-slate-300">Provider</label>
-          <select id="provider-preset" [value]="selectedPresetId()" (change)="onPresetChange($any($event.target).value)"
-                  class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <label for="provider-preset" class="field-label mt-5">Provider</label>
+          <select id="provider-preset" class="field mt-1" [value]="selectedPresetId()" (change)="onPresetChange($any($event.target).value)">
             @for (preset of options.presets; track preset.id) {
               <option [value]="preset.id">{{ preset.label }}</option>
             }
           </select>
 
           @if (selectedPreset(); as preset) {
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ preset.note }}</p>
+            <p class="hint mt-2">{{ preset.note }}</p>
 
-            <label for="provider-model" class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">Model</label>
-            <input id="provider-model" type="text" [value]="providerModel()" (input)="providerModel.set($any($event.target).value)"
-                   class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <label for="provider-model" class="field-label mt-4">Model</label>
+            <input id="provider-model" type="text" class="field mt-1 font-mono text-sm" [value]="providerModel()" (input)="providerModel.set($any($event.target).value)">
 
             @if (preset.needsKey) {
-              <label for="provider-key" class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">API key</label>
-              <input id="provider-key" type="password" autocomplete="off" [value]="providerKey()" (input)="providerKey.set($any($event.target).value)"
-                     placeholder="Stored on the server in memory only"
-                     class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <label for="provider-key" class="field-label mt-4">API key</label>
+              <input id="provider-key" type="password" autocomplete="off" class="field mt-1 font-mono text-sm" [value]="providerKey()" (input)="providerKey.set($any($event.target).value)"
+                     placeholder="Stored on the server in memory only">
+              <p class="hint mt-1 text-xs">
                 Held in memory until the server restarts. Never written to disk, never sent back to this page.
                 @if (preset.keyUrl) {
-                  <a [href]="preset.keyUrl" target="_blank" rel="noopener noreferrer" class="underline hover:text-blue-600 dark:hover:text-blue-400">Get a key</a>.
+                  <a [href]="preset.keyUrl" target="_blank" rel="noopener noreferrer" class="underline hover:text-primary dark:hover:text-primary-text-dark">Get a key</a>.
                 }
               </p>
             }
@@ -68,22 +63,19 @@
             <p class="mt-4 text-sm text-emerald-700 dark:text-emerald-400" role="status">{{ providerNotice() }}</p>
           }
 
-          <button (click)="applyProvider()" [disabled]="providerBusy()"
-                  class="press mt-5 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+          <button (click)="applyProvider()" [disabled]="providerBusy()" class="btn-primary mt-5 px-5 text-sm">
             {{ providerBusy() ? 'Checking…' : 'Use this backend' }}
           </button>
-          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">The backend is tested before it is adopted. A bad key leaves the current one running.</p>
+          <p class="hint mt-2 text-xs">The backend is tested before it is adopted. A bad key leaves the current one running.</p>
         } @else {
           <div class="flex items-start justify-between gap-4">
             <h2 class="text-lg font-semibold">No backend in this version</h2>
-            <button (click)="closeSettings()" class="press rounded-full p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+            <button (click)="closeSettings()" class="btn-icon">
               <span class="sr-only">Close settings</span>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
             </button>
           </div>
-          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            This version has no server, so it cannot read page images. Pasting LaTeX still works, entirely in your browser.
-          </p>
+          <p class="hint mt-2">This version has no server, so it cannot read page images. Pasting LaTeX still works, entirely in your browser.</p>
         }
       </div>
     }
@@ -92,11 +84,9 @@
     @switch (status()) {
       @case ('idle') {
         <div class="grid gap-6">
-          <section class="bg-white dark:bg-slate-800 rounded-2xl ring-1 ring-slate-900/5 dark:ring-white/10 shadow-sm p-6 sm:p-8" aria-labelledby="paste-heading">
+          <section class="card p-6 sm:p-8" aria-labelledby="paste-heading">
             <h2 id="paste-heading" class="text-xl font-semibold">Paste LaTeX</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Runs in your browser with no model, key or network. One formula per line, or <code>$$…$$</code> blocks.
-            </p>
+            <p class="hint mt-1">Runs in your browser with no model, key or network. One formula per line, or <code>$$…$$</code> blocks.</p>
             <label for="latex-input" class="sr-only">LaTeX to remediate</label>
             <textarea
               id="latex-input"
@@ -104,32 +94,24 @@
               [value]="latexInput()"
               (input)="latexInput.set($any($event.target).value)"
               placeholder="x = \frac{-b \pm \sqrt{b^{2} - 4ac}}{2a}"
-              class="mt-4 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 p-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+              class="field mt-4 rounded-xl bg-slate-50 p-3 font-mono text-sm"></textarea>
             <div class="mt-4 flex flex-col sm:flex-row gap-3">
-              <button (click)="remediatePastedLatex()" [disabled]="!latexInput().trim()" class="press rounded-full bg-blue-600 px-6 py-2.5 font-semibold text-white hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                Remediate
-              </button>
-              <button (click)="loadExample()" class="press rounded-full px-6 py-2.5 font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                Try an example
-              </button>
+              <button (click)="remediatePastedLatex()" [disabled]="!latexInput().trim()" class="btn-primary">Remediate</button>
+              <button (click)="loadExample()" class="btn-ghost px-6">Try an example</button>
             </div>
           </section>
 
-          <section class="bg-white dark:bg-slate-800 rounded-2xl ring-1 ring-slate-900/5 dark:ring-white/10 shadow-sm p-6 sm:p-8" aria-labelledby="upload-heading">
+          <section class="card p-6 sm:p-8" aria-labelledby="upload-heading">
             <h2 id="upload-heading" class="text-xl font-semibold">Upload a page</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              A PDF, screenshot or photo of a document page (PDF, PNG, JPG, WEBP). Reading a page needs a model backend.
-            </p>
-            <label for="file-upload" class="press mt-4 inline-block cursor-pointer rounded-full border border-slate-300 dark:border-slate-600 px-6 py-2.5 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 focus-within:outline focus-within:outline-2 focus-within:outline-blue-600">
-              Choose file
-            </label>
+            <p class="hint mt-1">A PDF, screenshot or photo of a document page (PDF, PNG, JPG, WEBP). Reading a page needs a model backend.</p>
+            <label for="file-upload" class="btn-outline mt-4 cursor-pointer px-6 focus-within:outline-2 focus-within:outline-primary">Choose file</label>
             <input id="file-upload" name="file-upload" type="file" class="sr-only" (change)="handleFileChange($event)" accept="image/png, image/jpeg, image/webp, application/pdf">
           </section>
         </div>
       }
       @case ('loading') {
-        <div class="flex flex-col items-center justify-center text-center p-10 bg-white dark:bg-slate-800 rounded-2xl ring-1 ring-slate-900/5 dark:ring-white/10 shadow-sm">
-          <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin motion-reduce:animate-none motion-reduce:border-t-blue-200" aria-hidden="true"></div>
+        <div class="card flex flex-col items-center justify-center p-10 text-center">
+          <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin motion-reduce:animate-none motion-reduce:border-t-blue-200" aria-hidden="true"></div>
           <p class="mt-6 text-lg font-medium">
             @if (progress(); as p) {
               Reading page {{ p.current }} of {{ p.total }}…
@@ -137,16 +119,14 @@
               Preparing your file…
             }
           </p>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Dense pages and long PDFs take longer.</p>
+          <p class="hint mt-1">Dense pages and long PDFs take longer.</p>
         </div>
       }
       @case ('error') {
-        <div class="bg-white dark:bg-slate-800 rounded-2xl ring-1 ring-red-500/30 shadow-sm p-8">
+        <div class="card p-8 ring-red-500/30 dark:ring-red-500/30">
           <h2 class="text-xl font-semibold text-red-700 dark:text-red-300">Couldn’t finish</h2>
           <p class="mt-2 text-slate-700 dark:text-slate-300" role="alert">{{ errorMessage() }}</p>
-          <button (click)="reset()" class="press mt-6 rounded-full bg-blue-600 px-6 py-2.5 font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-            Start over
-          </button>
+          <button (click)="reset()" class="btn-primary mt-6">Start over</button>
         </div>
       }
       @case ('success') {
@@ -160,12 +140,8 @@
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-              <button (click)="exportToHtml()" class="press rounded-full bg-blue-600 px-6 py-2.5 font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                Download accessible HTML
-              </button>
-              <button (click)="reset()" class="press rounded-full px-5 py-2.5 font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                Start over
-              </button>
+              <button (click)="exportToHtml()" class="btn-primary">Download accessible HTML</button>
+              <button (click)="reset()" class="btn-ghost">Start over</button>
             </div>
           </div>
 
@@ -178,9 +154,9 @@
           <div class="space-y-4">
             @for (view of formulaViews(); track $index; let i = $index) {
               @let formula = view.formula;
-              <article class="bg-white dark:bg-slate-800 rounded-2xl ring-1 ring-slate-900/5 dark:ring-white/10 shadow-sm p-6" [attr.aria-labelledby]="'formula-' + i">
+              <article class="card p-6" [attr.aria-labelledby]="'formula-' + i">
                 <div class="flex items-center gap-3">
-                  <h3 [id]="'formula-' + i" class="text-sm font-semibold text-slate-500 dark:text-slate-400">Formula {{ i + 1 }}</h3>
+                  <h3 [id]="'formula-' + i" class="hint font-semibold">Formula {{ i + 1 }}</h3>
                   @if (formula.needsReview) {
                     <span class="rounded-full bg-amber-100 dark:bg-amber-900/40 px-2.5 py-0.5 text-xs font-semibold text-amber-900 dark:text-amber-200">
                       Needs review: the LaTeX did not convert
@@ -202,11 +178,11 @@
                       <span class="text-slate-400 dark:text-slate-500">· ClearSpeak</span>
                     </p>
                     <div class="flex shrink-0 gap-1">
-                      <button (click)="speak(formula.description)" class="press inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1.5 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+                      <button (click)="speak(formula.description)" class="btn bg-slate-100 px-3 py-1.5 text-sm font-medium hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" /></svg>
                         Listen
                       </button>
-                      <button (click)="copyToClipboard(formula.description, 'Description')" class="press rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+                      <button (click)="copyToClipboard(formula.description, 'Description')" class="btn-icon p-2">
                         <span class="sr-only">Copy description</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
                       </button>
@@ -216,7 +192,7 @@
 
                 <div class="mt-4 flex items-start gap-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 px-4 py-3">
                   <pre class="flex-1 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap"><code>{{ formula.latex }}</code></pre>
-                  <button (click)="copyToClipboard(formula.latex, 'LaTeX')" class="press shrink-0 rounded-full p-1.5 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+                  <button (click)="copyToClipboard(formula.latex, 'LaTeX')" class="btn-icon shrink-0 hover:bg-slate-200">
                     <span class="sr-only">Copy LaTeX</span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
                   </button>
@@ -230,9 +206,9 @@
               <h2 id="pages-heading" class="text-lg font-semibold">Original pages</h2>
               <div class="grid gap-4 sm:grid-cols-2">
                 @for (image of uploadedImages(); track $index) {
-                  <figure class="bg-white dark:bg-slate-800 rounded-2xl ring-1 ring-slate-900/5 dark:ring-white/10 p-3">
+                  <figure class="card p-3 shadow-none">
                     <img [src]="image" [alt]="'Page ' + ($index + 1) + ' of the uploaded document'" class="rounded-lg w-full object-contain max-h-96">
-                    <figcaption class="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">Page {{ $index + 1 }}</figcaption>
+                    <figcaption class="hint mt-2 text-center">Page {{ $index + 1 }}</figcaption>
                   </figure>
                 }
               </div>
@@ -240,19 +216,15 @@
           }
 
           <section class="border-t border-slate-200 dark:border-slate-800 pt-6" aria-labelledby="other-exports">
-            <h2 id="other-exports" class="text-sm font-semibold text-slate-500 dark:text-slate-400">Other formats</h2>
+            <h2 id="other-exports" class="hint font-semibold">Other formats</h2>
             <div class="mt-3 flex flex-wrap gap-3">
-              <button (click)="exportToLatex()" class="press rounded-full border border-slate-300 dark:border-slate-600 px-5 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                LaTeX (.tex)
-              </button>
+              <button (click)="exportToLatex()" class="btn-outline py-2 text-sm">LaTeX (.tex)</button>
               @if (hasPages) {
-                <button (click)="downloadPageImages()" class="press rounded-full border border-slate-300 dark:border-slate-600 px-5 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                  Page images
-                </button>
+                <button (click)="downloadPageImages()" class="btn-outline py-2 text-sm">Page images</button>
               }
             </div>
             @if (hasPages) {
-              <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">
+              <p class="hint mt-3">
                 To show the pages in the compiled <code>.tex</code>, put the saved <code>page-N.png</code> files in the same folder before compiling.
               </p>
             }
