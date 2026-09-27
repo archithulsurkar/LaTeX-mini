@@ -31,6 +31,10 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Node 22 ships npm 10, which rejects lockfiles written by npm 11: npm 11
+      # omits the peer deps of optional wasm packages that npm 10 expects.
+      - run: npm install -g npm@11
+
       - run: npm ci
 
       # The demo is only worth publishing if the deterministic pipeline works,
