@@ -13,6 +13,7 @@ import { enrichFormulas } from './shared/enrich';
 import { AuthService } from './services/auth.service';
 import { HistoryService } from './services/history.service';
 import { describeItem, toHistoryInsert, type HistoryItem, type HistorySource } from './history';
+import { DEMO_SAMPLE } from './demo-sample';
 
 // Served from the app origin (see the `assets` entry in angular.json) so the
 // worker build always matches the bundled library version.
@@ -432,6 +433,53 @@ export class AppComponent {
     } catch (error) {
       console.error(error);
       this.errorMessage.set(error instanceof Error ? error.message : 'Could not process that LaTeX.');
+      this.status.set('error');
+    }
+  }
+
+  /**
+   * Shows the page-reading path without a model: a real page image plus the
+   * transcription a real model produced for it (see tools/make-demo-sample.ts).
+   * Only transcription is replayed; MathML, speech and review flags are derived
+   * here and now, exactly as they would be for an upload.
+   */
+  async loadSamplePage(): Promise<void> {
+    this.stopSpeaking();
+    this.notice.set('');
+    this.saveStatus.set('');
+    this.progress.set(null);
+    this.status.set('loading');
+    try {
+      const response = await fetch(DEMO_SAMPLE.image);
+      if (!response.ok) throw new Error('The sample page is missing from this build.');
+      const blob = await response.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error ?? new Error('Could not read the sample page.'));
+        reader.readAsDataURL(blob);
+      });
+
+      const result: RemediationResult = {
+        originalText: DEMO_SAMPLE.originalText,
+        formulas: await enrichFormulas([...DEMO_SAMPLE.latex]),
+      };
+      this.uploadedImages.set([dataUrl]);
+      this.remediationResult.set(result);
+      this.status.set('success');
+      const found = DEMO_SAMPLE.latex.length;
+      const onPage = DEMO_SAMPLE.formulasOnPage;
+      this.appendNotice(
+        `Sample page. The transcription was recorded from ${DEMO_SAMPLE.model} on ${DEMO_SAMPLE.recordedAt} ` +
+          `(best of ${DEMO_SAMPLE.runs} runs; its output varies between runs); ` +
+          'the MathML and spoken descriptions were just made in your browser.' +
+          (found < onPage
+            ? ` The model found ${found} of the ${onPage} formulas on the page. Compare with the page below: this is why results need a human check.`
+            : ''),
+      );
+      void this.saveToHistory(result, 'upload', 1, DEMO_SAMPLE.fileName);
+    } catch (error) {
+      this.errorMessage.set(error instanceof Error ? error.message : 'Could not load the sample page.');
       this.status.set('error');
     }
   }

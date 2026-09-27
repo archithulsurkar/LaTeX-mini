@@ -18,6 +18,12 @@ only what has shipped.
   MathML and speech are re-derived on load, and page images never leave the
   device. Row-level security restricts every user to their own rows; the
   schema is in `supabase/migrations`.
+- "Try a sample page" shows the page-reading path on the hosted demo, which has
+  no server: a real worksheet image plus the transcription `qwen2.5vl:7b`
+  produced for it (best of three recorded runs, and labelled as such). MathML,
+  speech, export and history then run live. `tools/make-demo-sample.ts`
+  regenerates the pair.
+- `docs/demo.md`: a ten-minute demo script covering every feature.
 
 ### Changed
 

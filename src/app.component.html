@@ -190,8 +190,11 @@
         <section class="mt-10 border-t border-rule pt-8" aria-labelledby="upload-heading">
           <h2 id="upload-heading" class="text-xl font-bold">Or upload a page</h2>
           <p class="hint mt-1 max-w-prose">A PDF, a screenshot or a photo of a worksheet (PDF, PNG, JPG or WEBP). Reading a page needs a model backend.</p>
-          <label for="file-upload" class="btn-quiet mt-3 cursor-pointer focus-within:outline-2 focus-within:outline-accent">Choose a file…</label>
-          <input id="file-upload" name="file-upload" type="file" class="sr-only" (change)="handleFileChange($event)" accept="image/png, image/jpeg, image/webp, application/pdf">
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <label for="file-upload" class="btn-quiet cursor-pointer focus-within:outline-2 focus-within:outline-accent">Choose a file…</label>
+            <input id="file-upload" name="file-upload" type="file" class="sr-only" (change)="handleFileChange($event)" accept="image/png, image/jpeg, image/webp, application/pdf">
+            <button (click)="loadSamplePage()" class="btn-text">or try a sample page</button>
+          </div>
         </section>
 
         <p class="hint mt-12 border-t border-rule pt-4 max-w-prose">
