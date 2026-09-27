@@ -21,11 +21,9 @@ export interface Formula {
   description: string;
   /** MathSpeak rendering, for readers who prefer explicit structure markers. */
   mathspeak: string;
-  /** Nemeth braille, as Unicode braille patterns. */
-  braille: string;
   /**
-   * Set when the LaTeX could not be converted, so no MathML, speech or braille
-   * could be produced. A human has to look at these before the document ships.
+   * Set when the LaTeX could not be converted, so no MathML or speech could be
+   * produced. A human has to look at these before the document ships.
    */
   needsReview: boolean;
 }
