@@ -1,5 +1,7 @@
 import express from 'express';
+import fs from 'node:fs';
 import path from 'node:path';
+import { enrichFormula } from '../src/shared/enrich.js';
 import { fileURLToPath } from 'node:url';
 import { UpstreamError } from './provider.js';
 import { resolveProvider } from './providers.js';
@@ -21,13 +23,26 @@ import {
 } from '../src/shared/remediation.types.js';
 
 const PORT = Number(process.env.PORT ?? 8787);
-const DIST_DIR = path.resolve(fileURLToPath(new URL('../dist', import.meta.url)));
+
+/**
+ * Where the built frontend lives.
+ *
+ * Two shapes to support. Run from source, this file sits in `server/` and the
+ * frontend is its sibling `dist/`. Bundled into a single executable there is no
+ * source tree at all, so the assets sit next to the executable and `DIST_DIR`
+ * names them. `__dirname` exists only in the CommonJS bundle, which is what
+ * distinguishes the two.
+ */
+function resolveDistDir(): string {
+  if (process.env.DIST_DIR) return path.resolve(process.env.DIST_DIR);
+  if (typeof __dirname !== 'undefined') return path.resolve(__dirname, 'dist');
+  return path.resolve(fileURLToPath(new URL('../dist', import.meta.url)));
+}
+
+const DIST_DIR = resolveDistDir();
 
 // Base64 inflates by 4/3; allow headroom for the JSON envelope.
 const JSON_LIMIT = `${Math.ceil((MAX_IMAGE_BYTES * 4) / 3 / 1024 / 1024) + 2}mb`;
-
-const provider = await resolveProvider();
-initActiveProvider(provider);
 
 const limiter = new RateLimiter();
 setInterval(() => limiter.prune(), RATE_LIMIT_WINDOW_MS).unref();
@@ -38,6 +53,9 @@ function decodedByteLength(base64: string): number {
   const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
   return (base64.length * 3) / 4 - padding;
 }
+
+/** Set once listening; the provider endpoint retimes it after a switch. */
+let activeServer: import('node:http').Server | undefined;
 
 const app = express();
 app.disable('x-powered-by');
@@ -86,7 +104,7 @@ app.post('/api/provider', async (req, res) => {
     });
 
     // A slow local model and a fast hosted one need different allowances.
-    server.requestTimeout = getActiveProvider().timeoutMs + 30_000;
+    if (activeServer) activeServer.requestTimeout = getActiveProvider().timeoutMs + 30_000;
     console.log(`Provider switched to ${state.name} (${state.model})`);
     res.json({ active: state, detail: check.detail });
   } catch (error) {
@@ -151,20 +169,59 @@ app.get(/^(?!\/api\/).*/, (_req, res, next) => {
   });
 });
 
-const server = app.listen(PORT, async () => {
-  console.log(
-    `API listening on http://localhost:${PORT} using ${provider.name} (${provider.model}), ` +
-      `request timeout ${Math.round(server.requestTimeout / 1000)}s`,
-  );
-  const status = await provider.check();
-  console[status.ok ? 'log' : 'warn'](`${status.ok ? 'Ready' : 'NOT READY'}: ${status.detail}`);
+/**
+ * Starts the server.
+ *
+ * Wrapped rather than run at module top level so the file can be bundled as
+ * CommonJS for the single executable: top-level `await` has no equivalent
+ * there, and a bundler refuses it outright.
+ */
+async function main(): Promise<void> {
+  if (process.argv.includes('--self-test')) return selfTest();
+
+  const provider = await resolveProvider();
+  initActiveProvider(provider);
+
+  const server = app.listen(PORT, async () => {
+    console.log(
+      `API listening on http://localhost:${PORT} using ${provider.name} (${provider.model}), ` +
+        `request timeout ${Math.round(server.requestTimeout / 1000)}s`,
+    );
+    const status = await provider.check();
+    console[status.ok ? 'log' : 'warn'](`${status.ok ? 'Ready' : 'NOT READY'}: ${status.detail}`);
+  });
+
+  // The request timeout has to outlast whichever provider is actually running: a
+  // local vision model can take minutes per page, while a hosted one should not be
+  // governed by the local model's much longer allowance. It stays finite — 0 would
+  // mean "never", which hands any client an unbounded open connection.
+  server.requestTimeout = provider.timeoutMs + 30_000;
+  activeServer = server;
+
+  // Headers arrive quickly no matter how slow generation is, so this keeps its
+  // default — it is the Slowloris defense.
+}
+
+/**
+ * Checks the install without starting a server: `formula-remediator --self-test`.
+ *
+ * The speech engine loads rule tables from disk at runtime, so a packaged build
+ * with those tables missing or misplaced starts cleanly and fails only when the
+ * first formula arrives. This surfaces that at install time, in one command,
+ * with no model or network needed.
+ */
+async function selfTest(): Promise<void> {
+  const formula = await enrichFormula('\\frac{1}{2}');
+  const ok = !formula.needsReview && formula.description === 'one half';
+
+  console.log(`MathML:  ${formula.mathml ? 'ok' : 'MISSING'}`);
+  console.log(`Speech:  ${formula.description || 'MISSING'}`);
+  console.log(`Frontend: ${fs.existsSync(path.join(DIST_DIR, 'index.html')) ? DIST_DIR : 'MISSING at ' + DIST_DIR}`);
+  console.log(ok ? 'Self-test passed.' : 'Self-test FAILED.');
+  process.exitCode = ok ? 0 : 1;
+}
+
+main().catch((error) => {
+  console.error('Server failed to start:', error);
+  process.exitCode = 1;
 });
-
-// The request timeout has to outlast whichever provider is actually running: a
-// local vision model can take minutes per page, while a hosted one should not be
-// governed by the local model's much longer allowance. It stays finite — 0 would
-// mean "never", which hands any client an unbounded open connection.
-server.requestTimeout = provider.timeoutMs + 30_000;
-
-// Headers arrive quickly no matter how slow generation is, so this keeps its
-// default — it is the Slowloris defense.
