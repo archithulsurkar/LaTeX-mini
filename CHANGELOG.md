@@ -10,6 +10,14 @@ only what has shipped.
 
 ## [Unreleased]
 
+Nothing released since 0.3.0.
+
+## [0.3.0] - 2026-09-27
+
+The model now transcribes and nothing else; everything a reader receives is
+derived from its LaTeX by rule. The deterministic half runs with no model at all,
+in a browser or from a single executable.
+
 ### Added
 
 - ClearSpeak and MathSpeak renderings generated from MathML by the Speech Rule
@@ -35,6 +43,9 @@ only what has shipped.
   Keys are held in server memory only.
 - GitHub Pages workflow publishing the browser-only demo (424 kB transferred),
   so the project can be tried without installing anything.
+- Single executable for Windows (`npm run build:exe`): server, frontend and
+  speech tables in one folder, runnable with no Node.js installed.
+  `--self-test` checks an install without starting a server.
 
 ### Changed
 
