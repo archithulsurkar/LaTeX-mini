@@ -82,7 +82,7 @@ check(`all ${PDF_PAGES} pages rendered and shown`, pageImages.length === PDF_PAG
 const summary = await page.textContent('p:has-text("Found")');
 check('summary reports pages', new RegExp(`across ${PDF_PAGES} page`).test(summary), summary?.trim());
 
-const formulaCards = await page.$$('h3:has-text("Formula")');
+const formulaCards = await page.$$('h2:has-text("Formula")');
 check('formula cards rendered', formulaCards.length > 0, `${formulaCards.length} cards`);
 
 // --- MathML actually made it into the DOM through DOMPurify ---
@@ -103,7 +103,7 @@ check('pdf.js worker loaded', workerReq.length === 0, workerReq.join(' | '));
 
 // --- copy button feedback ---
 await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: APP });
-await page.click('button:has(span:text("Copy LaTeX"))');
+await page.click('button:has-text("Copy LaTeX")');
 // The notice paragraph also uses role="status"; target the sr-only feedback line.
 // The app is zoneless, so the signal update can land after the click resolves —
 // wait for the text instead of reading once and hoping.
@@ -137,7 +137,7 @@ const junk = path.join(TMP, 'notes.txt');
 fs.writeFileSync(junk, 'this is not an image');
 await page.click('button:has-text("Start over")');
 await page.setInputFiles('#file-upload', junk);
-await page.waitForSelector('text=/Couldn.t finish/', { timeout: 20000 });
+await page.waitForSelector('text=/That didn.t work/', { timeout: 20000 });
 const errText = await page.textContent('[role="alert"]');
 check('bad file type rejected via magic bytes', /Invalid file type/.test(errText), errText?.trim());
 check('error uses role=alert', true);

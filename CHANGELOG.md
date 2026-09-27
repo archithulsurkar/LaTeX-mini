@@ -10,8 +10,25 @@ only what has shipped.
 
 ## [Unreleased]
 
+### Added
+
+- Optional accounts, by emailed magic link (Supabase Auth). Signed out, every
+  feature still works; signed in, each result is saved to a personal history
+  that can be reopened or deleted. Only the LaTeX and page text are stored:
+  MathML and speech are re-derived on load, and page images never leave the
+  device. Row-level security restricts every user to their own rows; the
+  schema is in `supabase/migrations`.
+
 ### Changed
 
+- New interface: a worksheet rather than a dashboard. Ink on paper, rules
+  instead of cards, one accent colour, textbook equation numbers, and a
+  highlighter mark for formulas that need checking. Set in Atkinson
+  Hyperlegible, bundled so the desktop app works offline.
+- Result cards lead with the rendered formula, then its spoken form, then the
+  LaTeX; one primary action; plain-language notices.
+- Buttons meet 44px on touch screens, all text meets WCAG AA contrast in light
+  and dark, and panels respect reduced-motion settings.
 - The HTML export is plain: black text on a white background in the browser's
   default font, with no panels, colours or dark mode.
 - The export keeps the original text's layout (line breaks, blank lines,
