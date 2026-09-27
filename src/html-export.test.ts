@@ -110,10 +110,17 @@ test('sanitizes mathml even though it is now derived, not model-written', () => 
   assert.doesNotMatch(html, /onclick/);
 });
 
-test('keeps blank-line-separated transcription as paragraphs', () => {
-  const html = build({ originalText: 'First block.\n\nSecond block.' });
-  assert.match(html, /<p>First block\.<\/p>/);
-  assert.match(html, /<p>Second block\.<\/p>/);
+test('keeps the original layout: line breaks, blank lines and indentation', () => {
+  const text = '1. Kinematics\n   v = u + at\n\nSecond block.';
+  const html = build({ originalText: `\n${text}\n\n` });
+  assert.ok(html.includes(`<div class="original">${text}</div>`), 'text verbatim, only outer blank lines trimmed');
+  assert.match(html, /\.original \{ white-space: pre-wrap; \}|pre, \.original \{ white-space: pre-wrap; \}/);
+});
+
+test('stays plain: white background, no colours, panels or dark mode', () => {
+  const html = build();
+  assert.match(html, /background: #fff/);
+  assert.doesNotMatch(html, /prefers-color-scheme|border-radius|font-family|<section/);
 });
 
 test('embeds page images as data URIs with alt text', () => {
