@@ -11,6 +11,124 @@
   }
 }
 
+/*
+ * Design tokens. `primary` is the single accent: primary buttons, links and
+ * focus rings. Change it here, not in the template.
+ */
+@theme {
+  --color-primary: var(--color-blue-600);
+  --color-primary-hover: var(--color-blue-500);
+  --color-primary-soft: var(--color-blue-50);
+  --color-primary-text-dark: var(--color-blue-400);
+}
+
+/*
+ * The handful of patterns the template repeats. Anything used once stays as
+ * utilities in the markup. Declared with @utility so they compose with @apply
+ * and sit in the utilities layer, where one-off utilities (px-8, text-sm) on
+ * the element can still override them.
+ */
+
+/* Feedback on press, not on release, and instant. */
+@utility press {
+  transition: transform 100ms ease-out, background-color 150ms ease-out;
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &:active:not(:disabled) {
+      transform: none;
+    }
+  }
+}
+
+@utility focus-ring {
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+}
+
+/* Compact for a mouse; at least 44px for a finger. */
+@utility btn {
+  @apply press focus-ring inline-flex items-center justify-center gap-1.5 rounded-full font-semibold
+    disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:min-h-11 pointer-coarse:min-w-11;
+}
+@utility btn-primary {
+  @apply btn bg-primary px-6 py-2.5 text-white hover:bg-primary-hover;
+}
+@utility btn-ghost {
+  @apply btn px-5 py-2.5 text-primary hover:bg-primary-soft dark:text-primary-text-dark dark:hover:bg-slate-800;
+}
+@utility btn-outline {
+  @apply btn border border-slate-300 px-5 py-2.5 hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800;
+}
+@utility btn-icon {
+  @apply btn p-1.5 font-normal text-slate-500 hover:bg-slate-100 hover:text-slate-800
+    dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100;
+}
+
+@utility card {
+  @apply rounded-2xl bg-white shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-800 dark:ring-white/10;
+}
+
+@utility field {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary
+    dark:border-slate-600 dark:bg-slate-900;
+}
+@utility field-label {
+  @apply block text-sm font-medium text-slate-700 dark:text-slate-300;
+}
+@utility hint {
+  @apply text-sm text-slate-500 dark:text-slate-400;
+}
+
 body {
-  @apply bg-slate-50 dark:bg-slate-900;
+  @apply bg-slate-50 dark:bg-slate-950;
+  font: 100%/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Large text reads too loose at default tracking; tighten it as it grows. */
+.display {
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* The settings panel grows out of the button that opened it (top right). */
+.sheet-in {
+  transform-origin: top right;
+  animation: sheet-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+@keyframes sheet-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* A floating material over the page rather than an opaque slab. */
+.toast {
+  color: rgb(15 23 42);
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 0 0 1px rgb(15 23 42 / 0.08), 0 8px 24px rgb(15 23 42 / 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  .toast {
+    color: rgb(241 245 249);
+    background: rgb(30 41 59 / 0.72);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 8px 24px rgb(0 0 0 / 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-in { animation: fade-in 150ms ease-out; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .toast { background: rgb(255 255 255); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: dark) {
+  .toast { background: rgb(30 41 59); }
 }

@@ -1,63 +1,56 @@
 
-<main class="min-h-screen font-sans text-slate-800 dark:text-slate-200 p-4 sm:p-6 lg:p-8">
-  <div class="max-w-5xl mx-auto">
-    <header class="text-center mb-10">
-      <h1 class="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400 mb-2">
-        Formula Accessibility Remediator
-      </h1>
-      <p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-        Instantly convert complex math and chemical formulas from images into accessible formats using Google Gemini.
+<main class="min-h-screen text-slate-900 dark:text-slate-100 px-4 py-10 sm:px-6 lg:px-8">
+  <div class="max-w-3xl mx-auto">
+    <header class="mb-10">
+      <div class="flex items-start justify-between gap-4">
+        <h1 class="display text-3xl sm:text-4xl font-semibold">Formula Accessibility Remediator</h1>
+        <button (click)="settingsOpen() ? closeSettings() : openSettings()" [attr.aria-expanded]="settingsOpen()" aria-controls="settings-panel"
+                class="btn shrink-0 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-200/70 dark:text-slate-300 dark:hover:bg-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.782-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.425-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+          Model backend
+        </button>
+      </div>
+      <p class="mt-3 text-lg text-slate-600 dark:text-slate-400 max-w-2xl">
+        Turn maths and chemistry formulas into MathML and spoken descriptions a screen reader can read. Paste LaTeX, or upload a page image.
       </p>
     </header>
 
-    <!-- Announces idle → loading → success/error transitions to screen readers. -->
-    <div class="w-full max-w-xl mx-auto mb-4 flex justify-end">
-      <button (click)="openSettings()" class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.782-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.425-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
-        Model backend
-      </button>
-    </div>
-
     @if (settingsOpen()) {
-      <div class="w-full max-w-xl mx-auto mb-6 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6" role="region" aria-label="Model backend settings">
+      <!-- Grows out of the Model backend button above it (origin top right), and leaves the same way. -->
+      <div id="settings-panel" class="card sheet-in mb-8 p-6 shadow-xl" role="region" aria-label="Model backend settings">
         @if (providerOptions(); as options) {
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h3 class="text-lg font-semibold text-slate-800 dark:text-white">Model backend</h3>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Currently {{ options.active.name }} ({{ options.active.model }}). Only needed for reading page images.
-              </p>
+              <h2 class="text-lg font-semibold">Model backend</h2>
+              <p class="hint mt-1">Using {{ options.active.name }} ({{ options.active.model }}). Only needed for reading page images.</p>
             </div>
-            <button (click)="closeSettings()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">
+            <button (click)="closeSettings()" class="btn-icon">
               <span class="sr-only">Close settings</span>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
-          <label for="provider-preset" class="mt-5 block text-sm font-medium text-slate-700 dark:text-slate-300">Provider</label>
-          <select id="provider-preset" [value]="selectedPresetId()" (change)="onPresetChange($any($event.target).value)"
-                  class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <label for="provider-preset" class="field-label mt-5">Provider</label>
+          <select id="provider-preset" class="field mt-1" [value]="selectedPresetId()" (change)="onPresetChange($any($event.target).value)">
             @for (preset of options.presets; track preset.id) {
               <option [value]="preset.id">{{ preset.label }}</option>
             }
           </select>
 
           @if (selectedPreset(); as preset) {
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ preset.note }}</p>
+            <p class="hint mt-2">{{ preset.note }}</p>
 
-            <label for="provider-model" class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">Model</label>
-            <input id="provider-model" type="text" [value]="providerModel()" (input)="providerModel.set($any($event.target).value)"
-                   class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 font-mono text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <label for="provider-model" class="field-label mt-4">Model</label>
+            <input id="provider-model" type="text" class="field mt-1 font-mono text-sm" [value]="providerModel()" (input)="providerModel.set($any($event.target).value)">
 
             @if (preset.needsKey) {
-              <label for="provider-key" class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">API key</label>
-              <input id="provider-key" type="password" autocomplete="off" [value]="providerKey()" (input)="providerKey.set($any($event.target).value)"
-                     placeholder="Stored on the server in memory only"
-                     class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 font-mono text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Held in memory until the server restarts — never written to disk, never sent back to this page.
+              <label for="provider-key" class="field-label mt-4">API key</label>
+              <input id="provider-key" type="password" autocomplete="off" class="field mt-1 font-mono text-sm" [value]="providerKey()" (input)="providerKey.set($any($event.target).value)"
+                     placeholder="Stored on the server in memory only">
+              <p class="hint mt-1 text-xs">
+                Held in memory until the server restarts. Never written to disk, never sent back to this page.
                 @if (preset.keyUrl) {
-                  <a [href]="preset.keyUrl" target="_blank" rel="noopener noreferrer" class="underline hover:text-blue-600 dark:hover:text-blue-400">Get a key</a>.
+                  <a [href]="preset.keyUrl" target="_blank" rel="noopener noreferrer" class="underline hover:text-primary dark:hover:text-primary-text-dark">Get a key</a>.
                 }
               </p>
             }
@@ -70,17 +63,19 @@
             <p class="mt-4 text-sm text-emerald-700 dark:text-emerald-400" role="status">{{ providerNotice() }}</p>
           }
 
-          <button (click)="applyProvider()" [disabled]="providerBusy()"
-                  class="mt-5 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
+          <button (click)="applyProvider()" [disabled]="providerBusy()" class="btn-primary mt-5 px-5 text-sm">
             {{ providerBusy() ? 'Checking…' : 'Use this backend' }}
           </button>
-          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">The backend is tested before it is adopted; a bad key leaves the current one running.</p>
+          <p class="hint mt-2 text-xs">The backend is tested before it is adopted. A bad key leaves the current one running.</p>
         } @else {
-          <h3 class="text-lg font-semibold text-slate-800 dark:text-white">No backend available</h3>
-          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            This build has no server, so page images cannot be read. Pasting LaTeX still works — it runs in your browser.
-          </p>
-          <button (click)="closeSettings()" class="mt-4 rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">Close</button>
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-lg font-semibold">No backend in this version</h2>
+            <button (click)="closeSettings()" class="btn-icon">
+              <span class="sr-only">Close settings</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <p class="hint mt-2">This version has no server, so it cannot read page images. Pasting LaTeX still works, entirely in your browser.</p>
         }
       </div>
     }
@@ -88,176 +83,152 @@
     <div [attr.aria-busy]="status() === 'loading'" aria-live="polite">
     @switch (status()) {
       @case ('idle') {
-        <div class="w-full max-w-xl mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 text-center">
-          <svg class="mx-auto h-16 w-16 text-slate-400 dark:text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
-          </svg>
-          <h3 class="mt-4 text-2xl font-semibold text-slate-800 dark:text-white">Upload a File</h3>
-          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Select a PDF, screenshot, or image of a document page (PDF, PNG, JPG, WEBP).
-          </p>
-          <label for="file-upload" class="mt-6 inline-block cursor-pointer rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
-            Select File
-          </label>
-          <input id="file-upload" name="file-upload" type="file" class="sr-only" (change)="handleFileChange($event)" accept="image/png, image/jpeg, image/webp, application/pdf">
-          <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">Reading a page needs a model backend.</p>
-        </div>
+        <div class="grid gap-6">
+          <section class="card p-6 sm:p-8" aria-labelledby="paste-heading">
+            <h2 id="paste-heading" class="text-xl font-semibold">Paste LaTeX</h2>
+            <p class="hint mt-1">Runs in your browser with no model, key or network. One formula per line, or <code>$$…$$</code> blocks.</p>
+            <label for="latex-input" class="sr-only">LaTeX to remediate</label>
+            <textarea
+              id="latex-input"
+              rows="4"
+              [value]="latexInput()"
+              (input)="latexInput.set($any($event.target).value)"
+              placeholder="x = \frac{-b \pm \sqrt{b^{2} - 4ac}}{2a}"
+              class="field mt-4 rounded-xl bg-slate-50 p-3 font-mono text-sm"></textarea>
+            <div class="mt-4 flex flex-col sm:flex-row gap-3">
+              <button (click)="remediatePastedLatex()" [disabled]="!latexInput().trim()" class="btn-primary">Remediate</button>
+              <button (click)="loadExample()" class="btn-ghost px-6">Try an example</button>
+            </div>
+          </section>
 
-        <div class="w-full max-w-xl mx-auto mt-6 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8">
-          <h3 class="text-xl font-semibold text-slate-800 dark:text-white">Or paste LaTeX</h3>
-          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Runs entirely in your browser — no model, no API key, no network. One formula per line,
-            or use <code>$$…$$</code> blocks.
-          </p>
-          <label for="latex-input" class="sr-only">LaTeX to remediate</label>
-          <textarea
-            id="latex-input"
-            rows="4"
-            [value]="latexInput()"
-            (input)="latexInput.set($any($event.target).value)"
-            placeholder="x = \frac{-b \pm \sqrt{b^{2} - 4ac}}{2a}"
-            class="mt-4 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 p-3 font-mono text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-          <div class="mt-4 flex flex-col sm:flex-row gap-3">
-            <button (click)="remediatePastedLatex()" [disabled]="!latexInput().trim()" class="rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
-              Remediate
-            </button>
-            <button (click)="loadExample()" class="rounded-lg border border-slate-300 dark:border-slate-600 px-6 py-3 text-base font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
-              Try an example
-            </button>
-          </div>
+          <section class="card p-6 sm:p-8" aria-labelledby="upload-heading">
+            <h2 id="upload-heading" class="text-xl font-semibold">Upload a page</h2>
+            <p class="hint mt-1">A PDF, screenshot or photo of a document page (PDF, PNG, JPG, WEBP). Reading a page needs a model backend.</p>
+            <label for="file-upload" class="btn-outline mt-4 cursor-pointer px-6 focus-within:outline-2 focus-within:outline-primary">Choose file</label>
+            <input id="file-upload" name="file-upload" type="file" class="sr-only" (change)="handleFileChange($event)" accept="image/png, image/jpeg, image/webp, application/pdf">
+          </section>
         </div>
       }
       @case ('loading') {
-        <div class="flex flex-col items-center justify-center text-center p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-          <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p class="mt-6 text-xl font-medium text-slate-700 dark:text-slate-300">
+        <div class="card flex flex-col items-center justify-center p-10 text-center">
+          <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin motion-reduce:animate-none motion-reduce:border-t-blue-200" aria-hidden="true"></div>
+          <p class="mt-6 text-lg font-medium">
             @if (progress(); as p) {
-              Analyzing page {{ p.current }} of {{ p.total }}...
+              Reading page {{ p.current }} of {{ p.total }}…
             } @else {
-              Preparing your file...
+              Preparing your file…
             }
           </p>
-          <p class="text-slate-500 dark:text-slate-400">This may take a moment for complex formulas or PDFs.</p>
+          <p class="hint mt-1">Dense pages and long PDFs take longer.</p>
         </div>
       }
       @case ('error') {
-        <div class="w-full max-w-xl mx-auto bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-2xl shadow-lg p-8 text-center">
-          <svg class="mx-auto h-12 w-12 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-          </svg>
-          <h3 class="mt-4 text-2xl font-semibold text-red-800 dark:text-red-200">An Error Occurred</h3>
-          <p class="mt-2 text-red-600 dark:text-red-300" role="alert">{{ errorMessage() }}</p>
-          <button (click)="reset()" class="mt-6 inline-block rounded-lg bg-red-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 transition-colors">
-            Try Again
-          </button>
+        <div class="card p-8 ring-red-500/30 dark:ring-red-500/30">
+          <h2 class="text-xl font-semibold text-red-700 dark:text-red-300">Couldn’t finish</h2>
+          <p class="mt-2 text-slate-700 dark:text-slate-300" role="alert">{{ errorMessage() }}</p>
+          <button (click)="reset()" class="btn-primary mt-6">Start over</button>
         </div>
       }
       @case ('success') {
+        @let hasPages = uploadedImages().length > 0;
         <div class="space-y-8">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="space-y-4">
-              <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Uploaded Content</h2>
-              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-4 space-y-4">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 class="display text-2xl font-semibold">Results</h2>
+              <p class="mt-1 text-slate-600 dark:text-slate-400">
+                {{ formulaViews().length }} {{ formulaViews().length === 1 ? 'formula' : 'formulas' }}@if (hasPages) { from {{ uploadedImages().length }} {{ uploadedImages().length === 1 ? 'page' : 'pages' }}}.
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button (click)="exportToHtml()" class="btn-primary">Download accessible HTML</button>
+              <button (click)="reset()" class="btn-ghost">Start over</button>
+            </div>
+          </div>
+
+          @if (notice()) {
+            <p class="rounded-xl bg-amber-50 dark:bg-amber-900/20 ring-1 ring-amber-500/30 p-3 text-sm text-amber-900 dark:text-amber-200" role="status">
+              {{ notice() }}
+            </p>
+          }
+
+          <div class="space-y-4">
+            @for (view of formulaViews(); track $index; let i = $index) {
+              @let formula = view.formula;
+              <article class="card p-6" [attr.aria-labelledby]="'formula-' + i">
+                <div class="flex items-center gap-3">
+                  <h3 [id]="'formula-' + i" class="hint font-semibold">Formula {{ i + 1 }}</h3>
+                  @if (formula.needsReview) {
+                    <span class="rounded-full bg-amber-100 dark:bg-amber-900/40 px-2.5 py-0.5 text-xs font-semibold text-amber-900 dark:text-amber-200">
+                      Needs review: the LaTeX did not convert
+                    </span>
+                  }
+                </div>
+
+                @if (formula.mathml) {
+                  <div
+                    class="mt-4 overflow-x-auto text-2xl py-2"
+                    [attr.aria-label]="'Formula ' + (i + 1) + ' rendered as MathML'"
+                    [innerHTML]="view.safeMathml"></div>
+                }
+
+                @if (formula.description) {
+                  <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
+                    <p class="flex-1 text-slate-700 dark:text-slate-300">
+                      {{ formula.description }}
+                      <span class="text-slate-500 dark:text-slate-400">· ClearSpeak</span>
+                    </p>
+                    <div class="flex shrink-0 gap-1">
+                      <button (click)="speak(formula.description)" class="btn bg-slate-100 px-3 py-1.5 text-sm font-medium hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" /></svg>
+                        Listen
+                      </button>
+                      <button (click)="copyToClipboard(formula.description, 'Description')" class="btn-icon p-2">
+                        <span class="sr-only">Copy description</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                }
+
+                <div class="mt-4 flex items-start gap-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 px-4 py-3">
+                  <pre class="flex-1 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap"><code>{{ formula.latex }}</code></pre>
+                  <button (click)="copyToClipboard(formula.latex, 'LaTeX')" class="btn-icon shrink-0 hover:bg-slate-200">
+                    <span class="sr-only">Copy LaTeX</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+
+          @if (hasPages) {
+            <section class="space-y-4" aria-labelledby="pages-heading">
+              <h2 id="pages-heading" class="text-lg font-semibold">Original pages</h2>
+              <div class="grid gap-4 sm:grid-cols-2">
                 @for (image of uploadedImages(); track $index) {
-                  <figure>
+                  <figure class="card p-3 shadow-none">
                     <img [src]="image" [alt]="'Page ' + ($index + 1) + ' of the uploaded document'" class="rounded-lg w-full object-contain max-h-96">
-                    @if (uploadedImages().length > 1) {
-                      <figcaption class="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">Page {{ $index + 1 }}</figcaption>
-                    }
+                    <figcaption class="hint mt-2 text-center">Page {{ $index + 1 }}</figcaption>
                   </figure>
                 }
               </div>
-            </div>
-            <div class="space-y-4">
-              <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Remediated Formulas</h2>
-              <p class="text-slate-600 dark:text-slate-400">
-                Found {{ formulaViews().length }} formula(s) across {{ uploadedImages().length }} page(s).
-              </p>
-              @if (notice()) {
-                <p class="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/30 p-3 text-sm text-amber-800 dark:text-amber-200" role="status">
-                  {{ notice() }}
-                </p>
+            </section>
+          }
+
+          <section class="border-t border-slate-200 dark:border-slate-800 pt-6" aria-labelledby="other-exports">
+            <h2 id="other-exports" class="hint font-semibold">Other formats</h2>
+            <div class="mt-3 flex flex-wrap gap-3">
+              <button (click)="exportToLatex()" class="btn-outline py-2 text-sm">LaTeX (.tex)</button>
+              @if (hasPages) {
+                <button (click)="downloadPageImages()" class="btn-outline py-2 text-sm">Page images</button>
               }
             </div>
-          </div>
-
-          <div class="space-y-6">
-            @for (view of formulaViews(); track $index; let i = $index) {
-              @let formula = view.formula;
-              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div class="p-6">
-                  <div class="flex items-center gap-3 mb-4">
-                    <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400">Formula {{ i + 1 }}</h3>
-                    @if (formula.needsReview) {
-                      <span class="rounded-full bg-amber-100 dark:bg-amber-900/40 px-3 py-1 text-xs font-semibold text-amber-800 dark:text-amber-200">
-                        Needs review — LaTeX did not convert
-                      </span>
-                    }
-                  </div>
-                  <div class="space-y-4">
-                    <div>
-                      <h4 class="font-medium text-slate-700 dark:text-slate-300">
-                        Spoken description
-                        <span class="font-normal text-slate-500 dark:text-slate-400">(ClearSpeak)</span>
-                      </h4>
-                      <div class="mt-2 p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-slate-600 dark:text-slate-300 relative group">
-                        <p>{{ formula.description }}</p>
-                        @if (formula.description) {
-                          <button (click)="speak(formula.description)" class="mt-3 inline-flex items-center gap-1.5 rounded-md bg-slate-200 dark:bg-slate-600 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-100 hover:bg-slate-300 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" /></svg>
-                            Listen
-                          </button>
-                        }
-                        <button (click)="copyToClipboard(formula.description, 'Description')" class="absolute top-2 right-2 p-1.5 bg-slate-200 dark:bg-slate-600 rounded-md text-slate-500 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                           <span class="sr-only">Copy description</span>
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 class="font-medium text-slate-700 dark:text-slate-300">LaTeX</h4>
-                      <div class="mt-2 p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg relative group">
-                        <pre class="text-sm text-pink-600 dark:text-pink-400 whitespace-pre-wrap"><code>{{ formula.latex }}</code></pre>
-                        <button (click)="copyToClipboard(formula.latex, 'LaTeX')" class="absolute top-2 right-2 p-1.5 bg-slate-200 dark:bg-slate-600 rounded-md text-slate-500 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                           <span class="sr-only">Copy LaTeX</span>
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 class="font-medium text-slate-700 dark:text-slate-300">MathML (Rendered)</h4>
-                      <div
-                        class="mt-2 p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg overflow-x-auto text-lg"
-                        [attr.aria-label]="'Formula ' + (i + 1) + ' rendered as MathML'"
-                        [innerHTML]="view.safeMathml"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            @if (hasPages) {
+              <p class="hint mt-3">
+                To show the pages in the compiled <code>.tex</code>, put the saved <code>page-N.png</code> files in the same folder before compiling.
+              </p>
             }
-          </div>
-          
-          <div class="mt-8 p-4 bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-lg text-sm text-blue-800 dark:text-slate-300">
-            <p class="font-semibold">Exporting to LaTeX</p>
-            <p class="mt-1">
-              The generated <code>.tex</code> file includes all extracted text and formulas. To include the original pages' visual layout, use <strong>Download page images</strong> and put the saved <code>page-N.png</code> files in the same folder as your <code>.tex</code> before compiling.
-            </p>
-          </div>
-
-          <div class="text-center mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button (click)="exportToHtml()" class="w-full sm:w-auto rounded-lg bg-emerald-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 transition-colors">
-              Download accessible HTML
-            </button>
-            <button (click)="exportToLatex()" class="w-full sm:w-auto rounded-lg bg-teal-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 transition-colors">
-              Export to LaTeX
-            </button>
-            <button (click)="downloadPageImages()" class="w-full sm:w-auto rounded-lg bg-slate-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-600 transition-colors">
-              Download page images
-            </button>
-            <button (click)="reset()" class="w-full sm:w-auto rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
-              Process Another File
-            </button>
-          </div>
+          </section>
         </div>
       }
     }
@@ -266,7 +237,7 @@
     <!-- Copy buttons give no visual confirmation on their own; announce the result. -->
     <p class="sr-only" role="status">{{ copyFeedback() }}</p>
     @if (copyFeedback()) {
-      <p aria-hidden="true" class="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-lg bg-slate-900 dark:bg-slate-700 px-4 py-2 text-sm text-white shadow-lg">
+      <p aria-hidden="true" class="toast fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full px-4 py-2 text-sm font-medium shadow-lg">
         {{ copyFeedback() }}
       </p>
     }
