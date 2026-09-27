@@ -46,9 +46,10 @@
   @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
 }
 
+/* Compact for a mouse; at least 44px for a finger. */
 @utility btn {
   @apply press focus-ring inline-flex items-center justify-center gap-1.5 rounded-full font-semibold
-    disabled:cursor-not-allowed disabled:opacity-40;
+    disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:min-h-11 pointer-coarse:min-w-11;
 }
 @utility btn-primary {
   @apply btn bg-primary px-6 py-2.5 text-white hover:bg-primary-hover;
