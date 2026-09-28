@@ -1,0 +1,1 @@
+Screen readers read raw LaTeX as "backslash frac, left brace…", so I built Formula Remediator: a vision model only transcribes the maths, and fixed rules turn each formula into MathML and a spoken description, so the same formula always sounds the same. Try it in your browser: https://archithulsurkar.github.io/LaTeX-mini/
