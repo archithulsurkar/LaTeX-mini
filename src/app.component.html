@@ -1,156 +1,326 @@
 
-<main class="min-h-screen font-sans text-slate-800 dark:text-slate-200 p-4 sm:p-6 lg:p-8">
-  <div class="max-w-5xl mx-auto">
-    <header class="text-center mb-10">
-      <h1 class="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400 mb-2">
-        Formula Accessibility Remediator
-      </h1>
-      <p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-        Instantly convert complex math and chemical formulas from images into accessible formats using Google Gemini.
+<div class="min-h-screen">
+  <header class="border-b border-rule">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
+      <p class="text-lg font-bold">
+        Formula Remediator
+        <span class="hidden sm:inline font-normal italic text-ink-soft">· readable maths for everyone</span>
       </p>
-    </header>
+      <nav class="flex items-center gap-1" aria-label="Main">
+        @if (user()) {
+          <button (click)="toggleHistory()" [attr.aria-expanded]="historyOpen()" aria-controls="history-panel" class="btn-text">History</button>
+        }
+        <button (click)="settingsOpen() ? closeSettings() : openSettings()" [attr.aria-expanded]="settingsOpen()" aria-controls="settings-panel" class="btn-text">
+          Model backend
+        </button>
+        <button (click)="toggleAccount()" [attr.aria-expanded]="accountOpen()" aria-controls="account-panel" class="btn-text">
+          {{ user() ? 'Account' : 'Sign in' }}
+        </button>
+      </nav>
+    </div>
+  </header>
 
-    <!-- Announces idle → loading → success/error transitions to screen readers. -->
-    <div [attr.aria-busy]="status() === 'loading'" aria-live="polite">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6">
+    @if (accountOpen()) {
+      <section id="account-panel" class="sheet sheet-in mt-4 p-5 sm:p-6" aria-labelledby="account-heading">
+        @if (user(); as signedIn) {
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="account-heading" class="text-xl font-bold">Signed in</h2>
+              <p class="mt-1">as <strong>{{ signedIn.email }}</strong></p>
+            </div>
+            <button (click)="toggleAccount()" class="btn-icon"><span class="sr-only">Close</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12" /></svg></button>
+          </div>
+          <p class="hint mt-3">Each result is saved to your history as you go. Only the LaTeX and page text are saved; page images stay on this device.</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button (click)="toggleHistory()" class="btn-quiet">Open history</button>
+            <button (click)="signOut()" class="btn-text">Sign out</button>
+          </div>
+        } @else if (linkSentTo()) {
+          <h2 id="account-heading" class="text-xl font-bold">Check your email</h2>
+          <p class="mt-2 max-w-prose">
+            We sent a sign-in link to <strong>{{ linkSentTo() }}</strong>. Open it on this device and you’ll land back here, signed in.
+          </p>
+          <p class="hint mt-3">
+            Nothing after a minute? Look in spam, or
+            <button (click)="linkSentTo.set('')" class="btn-text px-1 py-0 align-baseline">use a different address</button>.
+          </p>
+        } @else {
+          <div class="flex items-start justify-between gap-4">
+            <h2 id="account-heading" class="text-xl font-bold">Sign in to keep a history</h2>
+            <button (click)="toggleAccount()" class="btn-icon"><span class="sr-only">Close</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12" /></svg></button>
+          </div>
+          <p class="mt-2 max-w-prose">
+            Everything here works without an account. Signing in only saves your results so you can come back to them.
+            We’ll email you a link, so there’s no password to remember.
+          </p>
+          <form class="mt-4 flex flex-col sm:flex-row sm:items-end gap-3" (submit)="$event.preventDefault(); sendMagicLink()">
+            <div class="flex-1">
+              <label for="signin-email" class="field-label">Email</label>
+              <input id="signin-email" type="email" autocomplete="email" required class="field mt-1"
+                     [value]="signInEmail()" (input)="signInEmail.set($any($event.target).value)">
+            </div>
+            <button type="submit" [disabled]="authBusy()" class="btn-primary">{{ authBusy() ? 'Sending…' : 'Email me a link' }}</button>
+          </form>
+        }
+        @if (authError()) {
+          <p class="mt-3 text-[0.9375rem] font-bold text-red-700 dark:text-red-300" role="alert">{{ authError() }}</p>
+        }
+      </section>
+    }
+
+    @if (historyOpen()) {
+      <section id="history-panel" class="sheet sheet-in mt-4 p-5 sm:p-6" aria-labelledby="history-heading">
+        <div class="flex items-start justify-between gap-4">
+          <h2 id="history-heading" class="text-xl font-bold">Your history</h2>
+          <button (click)="toggleHistory()" class="btn-icon"><span class="sr-only">Close</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12" /></svg></button>
+        </div>
+        @if (historyError()) {
+          <p class="mt-3 font-bold text-red-700 dark:text-red-300" role="alert">{{ historyError() }}</p>
+        }
+        @if (historyItems(); as items) {
+          @if (items.length) {
+            <ul class="mt-3">
+              @for (item of items; track item.id) {
+                <li class="flex items-center justify-between gap-3 border-t border-rule py-3">
+                  <div class="min-w-0">
+                    <button (click)="openHistoryItem(item)" class="press focus-ring block max-w-full truncate rounded-sm text-left font-bold hover:underline underline-offset-4">{{ item.title }}</button>
+                    <p class="hint">{{ formatDate(item.created_at) }} · {{ describeItem(item) }}</p>
+                  </div>
+                  <button (click)="deleteHistoryItem(item)" class="btn-text shrink-0 text-ink-soft" [class.!text-red-700]="confirmDeleteId() === item.id">
+                    {{ confirmDeleteId() === item.id ? 'Delete? Press again' : 'Delete' }}
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="mt-3 text-ink-soft">Nothing saved yet. While you’re signed in, each result is saved here as you go.</p>
+          }
+        } @else if (!historyError()) {
+          <p class="mt-3 text-ink-soft">Loading…</p>
+        }
+      </section>
+    }
+
+    @if (settingsOpen()) {
+      <section id="settings-panel" class="sheet sheet-in mt-4 p-5 sm:p-6" aria-labelledby="settings-heading">
+        @if (providerOptions(); as options) {
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="settings-heading" class="text-xl font-bold">Model backend</h2>
+              <p class="hint mt-1">Using {{ options.active.name }} ({{ options.active.model }}). Only needed for reading page images.</p>
+            </div>
+            <button (click)="closeSettings()" class="btn-icon"><span class="sr-only">Close settings</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12" /></svg></button>
+          </div>
+
+          <label for="provider-preset" class="field-label mt-5">Provider</label>
+          <select id="provider-preset" class="field mt-1" [value]="selectedPresetId()" (change)="onPresetChange($any($event.target).value)">
+            @for (preset of options.presets; track preset.id) {
+              <option [value]="preset.id">{{ preset.label }}</option>
+            }
+          </select>
+
+          @if (selectedPreset(); as preset) {
+            <p class="hint mt-2">{{ preset.note }}</p>
+
+            <label for="provider-model" class="field-label mt-4">Model</label>
+            <input id="provider-model" type="text" class="field mt-1 font-mono text-sm" [value]="providerModel()" (input)="providerModel.set($any($event.target).value)">
+
+            @if (preset.needsKey) {
+              <label for="provider-key" class="field-label mt-4">API key</label>
+              <input id="provider-key" type="password" autocomplete="off" class="field mt-1 font-mono text-sm" [value]="providerKey()" (input)="providerKey.set($any($event.target).value)"
+                     placeholder="Kept on the server, in memory only">
+              <p class="hint mt-1">
+                Held in memory until the server restarts. Never written to disk, never sent back to this page.
+                @if (preset.keyUrl) {
+                  <a [href]="preset.keyUrl" target="_blank" rel="noopener noreferrer" class="text-accent underline underline-offset-4">Get a key</a>.
+                }
+              </p>
+            }
+          }
+
+          @if (providerError()) {
+            <p class="mt-4 font-bold text-red-700 dark:text-red-300" role="alert">{{ providerError() }}</p>
+          }
+          @if (providerNotice()) {
+            <p class="mt-4 font-bold text-accent" role="status">{{ providerNotice() }}</p>
+          }
+
+          <button (click)="applyProvider()" [disabled]="providerBusy()" class="btn-primary mt-5">
+            {{ providerBusy() ? 'Checking…' : 'Use this backend' }}
+          </button>
+          <p class="hint mt-2">It’s tested before it’s used. A wrong key leaves the current backend running.</p>
+        } @else {
+          <div class="flex items-start justify-between gap-4">
+            <h2 id="settings-heading" class="text-xl font-bold">No backend in this version</h2>
+            <button (click)="closeSettings()" class="btn-icon"><span class="sr-only">Close settings</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12" /></svg></button>
+          </div>
+          <p class="mt-2 max-w-prose">This version runs without a server, so it can’t read page images. Pasting LaTeX works fully, right here in your browser.</p>
+        }
+      </section>
+    }
+
+    <main class="py-10" [attr.aria-busy]="status() === 'loading'" aria-live="polite">
     @switch (status()) {
       @case ('idle') {
-        <div class="w-full max-w-xl mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 text-center">
-          <svg class="mx-auto h-16 w-16 text-slate-400 dark:text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
-          </svg>
-          <h3 class="mt-4 text-2xl font-semibold text-slate-800 dark:text-white">Upload a File</h3>
-          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Select a PDF, screenshot, or image of a document page (PDF, PNG, JPG, WEBP).
-          </p>
-          <label for="file-upload" class="mt-6 inline-block cursor-pointer rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
-            Select File
-          </label>
+        <h1 class="text-[1.75rem] sm:text-[2.125rem] font-bold leading-tight max-w-[22ch]">
+          Turn the maths on a page into words a screen reader can say.
+        </h1>
+        <p class="mt-3 max-w-prose text-ink-soft">
+          You get each formula as MathML, plus a spoken description written by rule rather than guessed, so the same formula always reads the same way.
+        </p>
+
+        <section class="mt-10" aria-labelledby="paste-heading">
+          <h2 id="paste-heading" class="text-xl font-bold">Paste LaTeX</h2>
+          <p class="hint mt-1">One formula per line, or <code class="font-mono text-sm">$$…$$</code> blocks. This part runs entirely in your browser.</p>
+          <label for="latex-input" class="sr-only">LaTeX to remediate</label>
+          <textarea
+            id="latex-input"
+            rows="5"
+            [value]="latexInput()"
+            (input)="latexInput.set($any($event.target).value)"
+            placeholder="x = \frac{-b \pm \sqrt{b^{2} - 4ac}}{2a}"
+            class="field ruled mt-3 font-mono text-[0.9375rem]"></textarea>
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button (click)="remediatePastedLatex()" [disabled]="!latexInput().trim()" class="btn-primary">Remediate</button>
+            <button (click)="loadExample()" class="btn-text">or try an example</button>
+          </div>
+        </section>
+
+        <section class="mt-10 border-t border-rule pt-8" aria-labelledby="upload-heading">
+          <h2 id="upload-heading" class="text-xl font-bold">Or upload a page</h2>
+          <p class="hint mt-1 max-w-prose">A PDF, a screenshot or a photo of a worksheet (PDF, PNG, JPG or WEBP). Reading a page needs a model backend.</p>
+          <label for="file-upload" class="btn-quiet mt-3 cursor-pointer focus-within:outline-2 focus-within:outline-accent">Choose a file…</label>
           <input id="file-upload" name="file-upload" type="file" class="sr-only" (change)="handleFileChange($event)" accept="image/png, image/jpeg, image/webp, application/pdf">
-        </div>
+        </section>
+
+        <p class="hint mt-12 border-t border-rule pt-4 max-w-prose">
+          Pasted LaTeX never leaves this browser unless you’re signed in, in which case it’s saved to your own history. Uploaded pages go only to the model backend you’ve chosen.
+        </p>
       }
       @case ('loading') {
-        <div class="flex flex-col items-center justify-center text-center p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-          <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p class="mt-6 text-xl font-medium text-slate-700 dark:text-slate-300">
-            @if (progress(); as p) {
-              Analyzing page {{ p.current }} of {{ p.total }}...
-            } @else {
-              Preparing your file...
-            }
-          </p>
-          <p class="text-slate-500 dark:text-slate-400">This may take a moment for complex formulas or PDFs.</p>
+        <div class="flex items-center gap-4 py-8">
+          <div class="h-6 w-6 shrink-0 rounded-full border-[3px] border-accent border-t-transparent animate-spin motion-reduce:animate-none motion-reduce:border-t-accent/30" aria-hidden="true"></div>
+          <div>
+            <p class="font-bold">
+              @if (progress(); as p) {
+                Reading page {{ p.current }} of {{ p.total }}…
+              } @else {
+                Working on it…
+              }
+            </p>
+            <p class="hint">Dense pages and long PDFs take a little longer.</p>
+          </div>
         </div>
       }
       @case ('error') {
-        <div class="w-full max-w-xl mx-auto bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-2xl shadow-lg p-8 text-center">
-          <svg class="mx-auto h-12 w-12 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-          </svg>
-          <h3 class="mt-4 text-2xl font-semibold text-red-800 dark:text-red-200">An Error Occurred</h3>
-          <p class="mt-2 text-red-600 dark:text-red-300" role="alert">{{ errorMessage() }}</p>
-          <button (click)="reset()" class="mt-6 inline-block rounded-lg bg-red-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 transition-colors">
-            Try Again
-          </button>
+        <div class="border-l-4 border-red-600 dark:border-red-400 pl-4 py-1">
+          <h1 class="text-2xl font-bold">That didn’t work</h1>
+          <p class="mt-2 max-w-prose" role="alert">{{ errorMessage() }}</p>
         </div>
+        <button (click)="reset()" class="btn-primary mt-6">Start over</button>
       }
       @case ('success') {
-        <div class="space-y-8">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="space-y-4">
-              <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Uploaded Content</h2>
-              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-4 space-y-4">
-                @for (image of uploadedImages(); track $index) {
-                  <figure>
-                    <img [src]="image" [alt]="'Page ' + ($index + 1) + ' of the uploaded document'" class="rounded-lg w-full object-contain max-h-96">
-                    @if (uploadedImages().length > 1) {
-                      <figcaption class="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">Page {{ $index + 1 }}</figcaption>
-                    }
-                  </figure>
-                }
-              </div>
-            </div>
-            <div class="space-y-4">
-              <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Remediated Formulas</h2>
-              <p class="text-slate-600 dark:text-slate-400">
-                Found {{ formulaViews().length }} formula(s) across {{ uploadedImages().length }} page(s).
-              </p>
-              @if (notice()) {
-                <p class="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/30 p-3 text-sm text-amber-800 dark:text-amber-200" role="status">
-                  {{ notice() }}
-                </p>
-              }
-            </div>
-          </div>
-
-          <div class="space-y-6">
-            @for (view of formulaViews(); track $index; let i = $index) {
-              @let formula = view.formula;
-              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div class="p-6">
-                  <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4">Formula {{ i + 1 }}</h3>
-                  <div class="space-y-4">
-                    <div>
-                      <h4 class="font-medium text-slate-700 dark:text-slate-300">Text Description</h4>
-                      <div class="mt-2 p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-slate-600 dark:text-slate-300 relative group">
-                        <p>{{ formula.description }}</p>
-                        <button (click)="copyToClipboard(formula.description, 'Description')" class="absolute top-2 right-2 p-1.5 bg-slate-200 dark:bg-slate-600 rounded-md text-slate-500 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                           <span class="sr-only">Copy description</span>
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 class="font-medium text-slate-700 dark:text-slate-300">LaTeX</h4>
-                      <div class="mt-2 p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg relative group">
-                        <pre class="text-sm text-pink-600 dark:text-pink-400 whitespace-pre-wrap"><code>{{ formula.latex }}</code></pre>
-                        <button (click)="copyToClipboard(formula.latex, 'LaTeX')" class="absolute top-2 right-2 p-1.5 bg-slate-200 dark:bg-slate-600 rounded-md text-slate-500 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                           <span class="sr-only">Copy LaTeX</span>
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 class="font-medium text-slate-700 dark:text-slate-300">MathML (Rendered)</h4>
-                      <div
-                        class="mt-2 p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg overflow-x-auto text-lg"
-                        [attr.aria-label]="'Formula ' + (i + 1) + ' rendered as MathML'"
-                        [innerHTML]="view.safeMathml"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-          
-          <div class="mt-8 p-4 bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-lg text-sm text-blue-800 dark:text-slate-300">
-            <p class="font-semibold">Exporting to LaTeX</p>
-            <p class="mt-1">
-              The generated <code>.tex</code> file includes all extracted text and formulas. To include the original pages' visual layout, use <strong>Download page images</strong> and put the saved <code>page-N.png</code> files in the same folder as your <code>.tex</code> before compiling.
+        @let hasPages = uploadedImages().length > 0;
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-[1.75rem] font-bold leading-tight">Results</h1>
+            <p class="text-ink-soft">
+              {{ formulaViews().length }} {{ formulaViews().length === 1 ? 'formula' : 'formulas' }}@if (hasPages) { from {{ uploadedImages().length }} {{ uploadedImages().length === 1 ? 'page' : 'pages' }}}
+              @if (saveStatus()) { <span role="status"> · {{ saveStatus() }}</span> }
             </p>
           </div>
-
-          <div class="text-center mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button (click)="exportToLatex()" class="w-full sm:w-auto rounded-lg bg-teal-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 transition-colors">
-              Export to LaTeX
-            </button>
-            <button (click)="downloadPageImages()" class="w-full sm:w-auto rounded-lg bg-slate-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-600 transition-colors">
-              Download page images
-            </button>
-            <button (click)="reset()" class="w-full sm:w-auto rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
-              Process Another File
-            </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button (click)="exportToHtml()" class="btn-primary">Download accessible HTML</button>
+            <button (click)="reset()" class="btn-text">Start over</button>
           </div>
         </div>
+
+        @if (notice()) {
+          <p class="mt-6 border-l-4 border-mark pl-4 py-1 max-w-prose" role="status">{{ notice() }}</p>
+        }
+
+        <ol class="mt-8">
+          @for (view of formulaViews(); track $index; let i = $index) {
+            @let formula = view.formula;
+            <li class="border-t border-rule py-7">
+              <h2 class="sr-only">Formula {{ i + 1 }}</h2>
+
+              <div class="grid grid-cols-[1fr_auto] items-center gap-4">
+                @if (formula.mathml) {
+                  <div class="overflow-x-auto text-[1.6rem] text-center"
+                       [attr.aria-label]="'Formula ' + (i + 1) + ' rendered as MathML'"
+                       [innerHTML]="view.safeMathml"></div>
+                } @else {
+                  <p class="max-w-prose">
+                    <span class="highlight font-bold">Needs a second look.</span>
+                    This LaTeX didn’t convert, so there’s no spoken version. Check it against the page.
+                  </p>
+                }
+                <span class="text-ink-soft tabular-nums" aria-hidden="true">({{ i + 1 }})</span>
+              </div>
+
+              @if (formula.description) {
+                <p class="mt-4 max-w-prose">
+                  <span class="text-ink-soft">Read aloud as</span> “{{ formula.description }}”
+                </p>
+                <div class="mt-1 -ml-2 flex flex-wrap gap-1">
+                  <button (click)="speak(formula.description)" class="btn-text">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" /></svg>
+                    Listen
+                  </button>
+                  <button (click)="copyToClipboard(formula.description, 'Description')" class="btn-text">
+                    Copy words<span class="sr-only"> for formula {{ i + 1 }}</span>
+                  </button>
+                </div>
+              }
+
+              <div class="mt-3 flex items-start gap-2 border-l-2 border-rule pl-3">
+                <pre class="flex-1 whitespace-pre-wrap font-mono text-sm text-ink-soft pt-1.5"><code>{{ formula.latex }}</code></pre>
+                <button (click)="copyToClipboard(formula.latex, 'LaTeX')" class="btn-text shrink-0 text-sm">
+                  Copy LaTeX<span class="sr-only"> for formula {{ i + 1 }}</span>
+                </button>
+              </div>
+            </li>
+          }
+        </ol>
+
+        @if (hasPages) {
+          <section class="border-t border-rule pt-8" aria-labelledby="pages-heading">
+            <h2 id="pages-heading" class="text-xl font-bold">Original pages</h2>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              @for (image of uploadedImages(); track $index) {
+                <figure>
+                  <img [src]="image" [alt]="'Page ' + ($index + 1) + ' of the uploaded document'" class="w-full max-h-96 object-contain rounded-sm border border-rule bg-panel">
+                  <figcaption class="hint mt-1">Page {{ $index + 1 }}</figcaption>
+                </figure>
+              }
+            </div>
+          </section>
+        }
+
+        <section class="mt-8 border-t border-rule pt-6" aria-labelledby="other-exports">
+          <h2 id="other-exports" class="font-bold">Other formats</h2>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button (click)="exportToLatex()" class="btn-quiet">LaTeX (.tex)</button>
+            @if (hasPages) {
+              <button (click)="downloadPageImages()" class="btn-quiet">Page images</button>
+            }
+          </div>
+          @if (hasPages) {
+            <p class="hint mt-3 max-w-prose">To show the pages in the compiled <code class="font-mono text-sm">.tex</code>, put the saved <code class="font-mono text-sm">page-N.png</code> files in the same folder before compiling.</p>
+          }
+        </section>
       }
     }
-    </div>
+    </main>
 
     <!-- Copy buttons give no visual confirmation on their own; announce the result. -->
     <p class="sr-only" role="status">{{ copyFeedback() }}</p>
     @if (copyFeedback()) {
-      <p aria-hidden="true" class="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-lg bg-slate-900 dark:bg-slate-700 px-4 py-2 text-sm text-white shadow-lg">
+      <p aria-hidden="true" class="toast fixed bottom-6 left-1/2 -translate-x-1/2 rounded-md px-4 py-2 font-bold">
         {{ copyFeedback() }}
       </p>
     }
   </div>
-</main>
+</div>
