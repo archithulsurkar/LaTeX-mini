@@ -48,7 +48,7 @@ await page.goto(APP, { waitUntil: 'networkidle' });
 const h1 = await page.textContent('h1');
 check('app boots and renders', h1?.includes('Formula Accessibility Remediator'), h1?.trim());
 check('no uncaught exceptions on boot', pageErrors.length === 0, pageErrors.join(' | '));
-check('idle upload card shown', await page.isVisible('text=Upload a File'));
+check('idle upload card shown', await page.isVisible('text=Upload a page'));
 
 // --- tailwind actually compiled (not the CDN script) ---
 const headingColor = await page.$eval('h1', (el) => getComputedStyle(el).backgroundImage);
@@ -59,7 +59,7 @@ log(`uploading ${PDF_PAGES}-page PDF`);
 await page.setInputFiles('#file-upload', PDF);
 
 // progress text proves the multi-page loop is running
-const progressSelector = `text=/Analyzing page \\d+ of ${PDF_PAGES}/`;
+const progressSelector = `text=/Reading page \\d+ of ${PDF_PAGES}/`;
 try {
   await page.waitForSelector(progressSelector, { timeout: 30000 });
   const progress = await page.textContent(progressSelector);
@@ -73,7 +73,7 @@ const busyDuringLoad = await page.getAttribute('[aria-live="polite"]', 'aria-bus
 check('aria-busy set while loading', busyDuringLoad === 'true', `aria-busy=${busyDuringLoad}`);
 
 log(`waiting for results (${PDF_PAGES} model calls)`);
-await page.waitForSelector('text=Remediated Formulas', { timeout: 420000 });
+await page.waitForSelector('text=Results', { timeout: 420000 });
 
 // --- results ---
 const pageImages = await page.$$eval('figure img', (els) => els.map((e) => e.getAttribute('alt')));
@@ -82,7 +82,7 @@ check(`all ${PDF_PAGES} pages rendered and shown`, pageImages.length === PDF_PAG
 const summary = await page.textContent('p:has-text("Found")');
 check('summary reports pages', new RegExp(`across ${PDF_PAGES} page`).test(summary), summary?.trim());
 
-const formulaCards = await page.$$('h3:has-text("Formula")');
+const formulaCards = await page.$$('h2:has-text("Formula")');
 check('formula cards rendered', formulaCards.length > 0, `${formulaCards.length} cards`);
 
 // --- MathML actually made it into the DOM through DOMPurify ---
@@ -103,7 +103,7 @@ check('pdf.js worker loaded', workerReq.length === 0, workerReq.join(' | '));
 
 // --- copy button feedback ---
 await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: APP });
-await page.click('button:has(span:text("Copy LaTeX"))');
+await page.click('button:has-text("Copy LaTeX")');
 // The notice paragraph also uses role="status"; target the sr-only feedback line.
 // The app is zoneless, so the signal update can land after the click resolves —
 // wait for the text instead of reading once and hoping.
@@ -116,7 +116,7 @@ check('copy feedback announced', /copied to clipboard/i.test(feedback || ''), (f
 log('exporting .tex');
 const [download] = await Promise.all([
   page.waitForEvent('download', { timeout: 30000 }),
-  page.click('button:has-text("Export to LaTeX")'),
+  page.click('button:has-text("LaTeX (.tex)")'),
 ]);
 const texPath = path.join(TMP, 'exported.tex');
 await download.saveAs(texPath);
@@ -135,9 +135,9 @@ log('screenshot saved');
 log('testing rejection of a non-image file');
 const junk = path.join(TMP, 'notes.txt');
 fs.writeFileSync(junk, 'this is not an image');
-await page.click('button:has-text("Process Another File")');
+await page.click('button:has-text("Start over")');
 await page.setInputFiles('#file-upload', junk);
-await page.waitForSelector('text=An Error Occurred', { timeout: 20000 });
+await page.waitForSelector('text=/That didn.t work/', { timeout: 20000 });
 const errText = await page.textContent('[role="alert"]');
 check('bad file type rejected via magic bytes', /Invalid file type/.test(errText), errText?.trim());
 check('error uses role=alert', true);

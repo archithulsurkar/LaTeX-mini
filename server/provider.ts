@@ -1,5 +1,5 @@
-import { normalizeLatex } from '../src/shared/latex-normalize.js';
-import type { RemediationResult } from '../src/shared/remediation.types.js';
+import { enrichFormulas } from '../src/shared/enrich.js';
+import type { ModelResult, RemediationResult } from '../src/shared/remediation.types.js';
 
 export interface CheckResult {
   ok: boolean;
@@ -70,14 +70,13 @@ export class UpstreamError extends Error {
   }
 }
 
-export const PROMPT = `Analyze the provided image of a document page. Your task is to extract two types of information:
-1.  **Full Text Content**: Transcribe all the text from the image, maintaining the original paragraph structure as best as possible.
-2.  **Formulas**: Identify all distinct mathematical or chemical formulas. For each formula, provide:
-    a. A detailed text description explaining the formula and its components, suitable for a screen reader.
-    b. The formula's representation in LaTeX.
-    c. The formula's representation in MathML.
+export const PROMPT = `Analyze the provided image of a document page. Your task is to extract two things:
+1.  **Full Text Content**: Transcribe all the text from the image exactly as written, keeping its layout in plain text: the original line breaks, blank lines between paragraphs, headings on their own line, list bullets and numbers, and indentation. Do not reflow, summarise, correct or reorder the text.
+2.  **Formulas**: Identify all distinct mathematical or chemical formulas, and give the LaTeX for each.
 
-LaTeX rules — the output is compiled, so it must be valid LaTeX, not Unicode:
+Transcribe only. Do not describe the formulas and do not write MathML. The screen-reader description and the MathML are generated from your LaTeX by a rule-based engine, so anything you write for those is discarded.
+
+LaTeX rules — the output is compiled and converted, so it must be valid LaTeX, not Unicode:
 - Use commands, never Unicode symbols: \pm not ±, \sqrt{...} not √, \times not ×, \rightarrow not →, \Delta not Δ, \leq not ≤.
 - Use ^{...} and _{...} for superscripts and subscripts, never ² or ₂.
 - Use \frac{numerator}{denominator} for fractions written as a ratio.
@@ -105,11 +104,9 @@ export const RESPONSE_JSON_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          description: { type: 'string', description: 'A detailed text description of the formula.' },
           latex: { type: 'string', description: 'The LaTeX representation of the formula.' },
-          mathml: { type: 'string', description: 'The MathML representation of the formula.' },
         },
-        required: ['description', 'latex', 'mathml'],
+        required: ['latex'],
       },
     },
   },
@@ -117,32 +114,33 @@ export const RESPONSE_JSON_SCHEMA = {
 } as const;
 
 /**
- * Rewrites Unicode math the model emitted as LaTeX commands.
+ * Turns the model's LaTeX into everything a reader consumes.
  *
- * Applied to every provider: local models ignore the prompt's LaTeX rules
- * routinely, and hosted ones slip occasionally.
+ * Two passes. First the Unicode the model emitted despite the prompt is
+ * rewritten as commands — local models ignore those rules routinely and hosted
+ * ones slip occasionally. Then MathML and speech are derived from that LaTeX by
+ * rule, so the three representations cannot contradict one another and none of
+ * them is invented per request.
+ *
+ * A formula whose LaTeX will not parse yields no derived output at all and is
+ * flagged instead: narrating an error to a blind reader is worse than telling a
+ * reviewer that one formula needs a human.
  */
-function normalizeResult(result: RemediationResult): RemediationResult {
-  return {
-    originalText: result.originalText,
-    formulas: result.formulas.map((formula) => ({
-      ...formula,
-      latex: normalizeLatex(formula.latex),
-    })),
-  };
+async function enrich(result: ModelResult): Promise<RemediationResult> {
+  const formulas = await enrichFormulas(result.formulas.map((formula) => formula.latex));
+
+  const flagged = formulas.filter((formula) => formula.needsReview).length;
+  if (flagged) console.warn(`${flagged} formula(s) flagged for review: LaTeX would not convert.`);
+
+  return { originalText: result.originalText, formulas };
 }
 
-export function isRemediationResult(value: unknown): value is RemediationResult {
+export function isModelResult(value: unknown): value is ModelResult {
   if (typeof value !== 'object' || value === null) return false;
-  const candidate = value as Partial<RemediationResult>;
+  const candidate = value as Partial<ModelResult>;
   if (typeof candidate.originalText !== 'string') return false;
   if (!Array.isArray(candidate.formulas)) return false;
-  return candidate.formulas.every(
-    (formula) =>
-      typeof formula?.description === 'string' &&
-      typeof formula?.latex === 'string' &&
-      typeof formula?.mathml === 'string',
-  );
+  return candidate.formulas.every((formula) => typeof formula?.latex === 'string');
 }
 
 /**
@@ -151,7 +149,10 @@ export function isRemediationResult(value: unknown): value is RemediationResult 
  * Local models are looser than hosted ones: they wrap JSON in prose or fences
  * even when asked not to, so recover the object before giving up.
  */
-export function parseModelJson(raw: string | undefined, providerName: string): RemediationResult {
+export async function parseModelJson(
+  raw: string | undefined,
+  providerName: string,
+): Promise<RemediationResult> {
   const text = raw?.trim();
   if (!text) {
     throw new UpstreamError(`${providerName} returned no content.`, 502);
@@ -175,7 +176,7 @@ export function parseModelJson(raw: string | undefined, providerName: string): R
     } catch {
       continue;
     }
-    if (isRemediationResult(parsed)) return normalizeResult(parsed);
+    if (isModelResult(parsed)) return enrich(parsed);
   }
 
   throw new UpstreamError(`${providerName} returned data in an unexpected shape.`, 502);
