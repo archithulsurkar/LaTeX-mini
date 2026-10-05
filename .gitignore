@@ -32,5 +32,6 @@ dist-ssr
 # e2e fixtures and artifacts
 e2e/.tmp
 
-.agents/*
-
+# Executable build: intermediate bundles and the packaged release
+build
+release
